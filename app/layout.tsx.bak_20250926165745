@@ -1,0 +1,75 @@
+"use client"
+
+import { usePathname } from "next/navigation"
+import { GeistSans } from "geist/font/sans"
+import { GeistMono } from "geist/font/mono"
+import { Playfair_Display } from "next/font/google"
+import { Analytics } from "@vercel/analytics/next"
+import { Suspense } from "react"
+import { LocalizationProvider } from "@/hooks/use-localization"
+import "./globals.css"
+import Header from "@/components/header"
+import Footer from "@/components/footer"
+import VerticalNavigation from "@/components/sidebar/vertical-navigation"
+
+const playfairDisplay = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-playfair",
+  weight: ["400", "700"],
+})
+// Layout constants
+const HEADER_HEIGHT = 56
+const SIDEBAR_GAP = 0 // no visual gap; sidebar touches header
+const CONTENT_TOP_PADDING = 48 // visually lower workspace from header
+
+export default function RootLayout({
+  children,
+}: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const isAuthPage = pathname === "/login"
+
+  return (
+    <html lang="en">
+      <body
+        className={`font-sans min-h-screen flex flex-col ${GeistSans.variable} ${GeistMono.variable} ${playfairDisplay.variable}`}
+        style={{
+          margin: 0,
+          padding: 0,
+```
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                padding: 0,
+                maxWidth: "1400px",
+                width: "100%",
+                background: "transparent",
+                flex: 1,
+              }}
+            >
+              {/* Content Area */}
+              <div
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  borderRadius: 0,
+                  boxShadow: "none",
+                  padding: `${CONTENT_TOP_PADDING}px 0 0 0`,
+                  minHeight: "calc(100vh - 200px)",
+                  margin: 0,
+                  flex: 1,
+                }}
+              >
+                <Suspense fallback={null}>{children}</Suspense>
+                <Analytics />
+              </div>
+            </main>
+          </div>
+
+          {/* Footer */}
+          <Footer />
+        </LocalizationProvider>
+      </body>
+    </html>
+  )
+}

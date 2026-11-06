@@ -1,0 +1,113 @@
+"use client"
+
+import type React from "react"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
+
+import { useState } from "react"
+import { Bell, Menu, User, Ticket, BookOpen, Users, BarChart3, Settings, Home, FileText, FormInput } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { cn } from "@/lib/utils"
+import { LanguageSelector } from "./language-selector"
+import { useLocalization } from "@/hooks/use-localization"
+
+interface DashboardLayoutProps {
+  children: React.ReactNode
+  showHeading?: boolean
+}
+
+const sidebarItems = [
+  { icon: Home, labelKey: "nav.dashboard", href: "/" },
+  { icon: Ticket, labelKey: "nav.tickets", href: "/tickets" },
+  { icon: BookOpen, labelKey: "nav.knowledge_base", href: "/knowledge-base" },
+  { icon: Users, labelKey: "nav.users", href: "/users" },
+  { icon: FileText, labelKey: "nav.reporting", href: "/reporting" },
+  { icon: FileText, labelKey: "nav.lettering", href: "/letters" },
+  { icon: BarChart3, labelKey: "analysis_and_report", href: "/analysis-report" },
+  { icon: FormInput, labelKey: "feedback", href: "/feedback" },
+  { icon: BarChart3, labelKey: "analytics", href: "/analytics" },
+  { icon: Settings, labelKey: "nav.settings", href: "/settings" },
+]
+
+export function DashboardLayout({ children, showHeading = true }: DashboardLayoutProps) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { language, setLanguage, t, languageConfig } = useLocalization()
+  const pathname = usePathname()
+  return (
+      <aside
+        className={cn(
+          "fixed left-0 top-0 z-40 h-screen border-r border-sidebar-border transition-all duration-300",
+          sidebarOpen ? "w-64" : "w-16",
+          languageConfig.direction === "rtl" && "right-0 left-auto border-l border-r-0",
+        )}
+        style={{ background: "#135a98" }}>
+        <div className="flex h-full flex-col">
+          {/* Header actions: Messages, About us, Languages */}
+          <div className="flex items-center justify-between gap-2 p-3 border-b border-white/20">
+            <Link href="/messages"><Button size="sm" variant="ghost" className="text-white hover:bg-white/10">Messages</Button></Link>
+            <Link href="/about"><Button size="sm" variant="ghost" className="text-white hover:bg-white/10">About us</Button></Link>
+            <Link href="/languages"><Button size="sm" variant="ghost" className="text-white hover:bg-white/10">Languages</Button></Link>
+          </div>
+          {/* Navigation */}
+          <nav className="flex-1 p-4 space-y-2">
+            {sidebarItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <div key={item.href}>
+                  <Link href={item.href}>
+                    <Button
+                      variant={isActive ? "default" : "ghost"}
+                      size="lg"
+                      className={cn(
+                        "w-full justify-start gap-4 h-14 text-lg",
+                        !sidebarOpen && "px-2",
+                        // Base button color for sidebar items
+                        "bg-[#135a98] text-white hover:bg-[#0f4e84] border-0",
+                        // Active state subtle emphasis
+                        isActive && "brightness-110",
+                        languageConfig.direction === "rtl" && "flex-row-reverse",
+                      )}
+                    >
+                      <item.icon className="w-6 h-6 flex-shrink-0" />
+                      {sidebarOpen && <span className="text-lg">{t(item.labelKey)}</span>}
+                    </Button>
+                  </Link>
+                </div>
+              )
+            })}
+          </nav>
+        </div>
+      </aside>
+      {/* Main Content */}
+      <div
+        className={cn(
+          "transition-all duration-300",
+          sidebarOpen ? "ml-64" : "ml-16",
+          languageConfig.direction === "rtl" && (sidebarOpen ? "mr-64 ml-0" : "mr-16 ml-0"),
+        )}
+      >
+        {/* Page Content */}
+        <main className="px-6 pb-6 pt-0">
+          {showHeading && (
+            <div className="w-full">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-[#0d47a1] mt-0 mb-2 text-left">
+                
+              </h1>
+            </div>
+          )}
+          {children}
+        </main>
+      </div>
+    </div>
+  )
+}

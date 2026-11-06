@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Users List - 11 Users</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+      .header p {
+        font-size: 1.1em;
+        opacity: 0.9;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        padding: 30px;
+        background: #f8f9fa;
+      }
+      .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+      .stat-card .number {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 5px;
+      }
+      .stat-card .label {
+        color: #666;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .table-container {
+        padding: 30px;
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95em;
+      }
+      thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85em;
+        letter-spacing: 0.5px;
+      }
+      tbody tr {
+        border-bottom: 1px solid #e9ecef;
+        transition: background-color 0.2s;
+      }
+      tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+      tbody tr:nth-child(even) {
+        background-color: #fafafa;
+      }
+      tbody tr:nth-child(even):hover {
+        background-color: #f0f0f0;
+      }
+      td {
+        padding: 12px 15px;
+        color: #333;
+      }
+      .role-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85em;
+        font-weight: 600;
+        text-transform: capitalize;
+      }
+      .role-admin {
+        background: #ff6b6b;
+        color: white;
+      }
+      .role-commissioner {
+        background: #4ecdc4;
+        color: white;
+      }
+      .role-department-head {
+        background: #45b7d1;
+        color: white;
+      }
+      .role-support-agent {
+        background: #96ceb4;
+        color: white;
+      }
+      .role-end-user {
+        background: #ffeaa7;
+        color: #333;
+      }
+      .status-active {
+        color: #27ae60;
+        font-weight: 600;
+      }
+      .status-inactive {
+        color: #e74c3c;
+        font-weight: 600;
+      }
+      .role-stats {
+        padding: 30px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+      }
+      .role-stats h2 {
+        margin-bottom: 15px;
+        color: #333;
+      }
+      .role-stats ul {
+        list-style: none;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+      }
+      .role-stats li {
+        background: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .footer {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+        font-size: 0.9em;
+        border-top: 1px solid #e9ecef;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>👥 Users List</h1>
+        <p>Complete user directory - Generated on 11/29/2025, 11:04:15 AM</p>
+      </div>
+
+      <div class="stats">
+        <div class="stat-card">
+          <div class="number">6</div>
+          <div class="label">Total Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="number">6</div>
+          <div class="label">Active Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="number">0</div>
+          <div class="label">Inactive Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="number">6</div>
+          <div class="label">Internal Users</div>
+        </div>
+        <div class="stat-card">
+          <div class="number">0</div>
+          <div class="label">External Users</div>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Department</th>
+              <th>Type</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>e091537c-44f2-48d7-bc25-ccab5900d957</td>
+              <td>Ew@gmail.com</td>
+              <td>Aster temesgen</td>
+              <td><span class="role-badge role-department-head">Department_Head</span></td>
+              <td><span class="status-active">Active</span></td>
+              <td>Executive Director, Women and Social Inclusion Program</td>
+              <td>INTERNAL</td>
+              <td>11/28/2025</td>
+            </tr>
+
+            <tr>
+              <td>09aa1c56-20b5-48b2-8063-d284183b32a2</td>
+              <td>ayenew@gmail.com</td>
+              <td>Ayenew Yifru</td>
+              <td><span class="role-badge role-department-head">Department_Head</span></td>
+              <td><span class="status-active">Active</span></td>
+              <td>ICSMIS</td>
+              <td>INTERNAL</td>
+              <td>11/28/2025</td>
+            </tr>
+
+            <tr>
+              <td>c722198a-7e8e-4d50-ab85-194f68826b59</td>
+              <td>mu@gmail.com</td>
+              <td>Mulugeta Aytenew</td>
+              <td><span class="role-badge role-end-user">END_USER</span></td>
+              <td><span class="status-active">Active</span></td>
+              <td>ICSMIS</td>
+              <td>INTERNAL</td>
+              <td>11/28/2025</td>
+            </tr>
+
+            <tr>
+              <td>90e60621-6e86-4c5a-a6ac-6d9bacd4405e</td>
+              <td>hb@gmail.com</td>
+              <td>Hewan Getachew</td>
+              <td><span class="role-badge role-end-user">END_USER</span></td>
+              <td><span class="status-active">Active</span></td>
+              <td>ICSMIS</td>
+              <td>INTERNAL</td>
+              <td>11/28/2025</td>
+            </tr>
+
+            <tr>
+              <td>2e76621b-7979-414a-a0f9-b3f5765a3650</td>
+              <td>yt122119@gmail.com</td>
+              <td>Yilkal Tsehay</td>
+              <td><span class="role-badge role-end-user">END_USER</span></td>
+              <td><span class="status-active">Active</span></td>
+              <td>ICSMIS</td>
+              <td>INTERNAL</td>
+              <td>11/28/2025</td>
+            </tr>
+
+            <tr>
+              <td>a39fee49-46f5-4b3e-9d34-5fcb59a45525</td>
+              <td>admin@example.com</td>
+              <td>kumlachew Gete</td>
+              <td><span class="role-badge role-admin">ADMIN</span></td>
+              <td><span class="status-active">Active</span></td>
+              <td>ICSMIS</td>
+              <td>INTERNAL</td>
+              <td>11/28/2025</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="role-stats">
+        <h2>Users by Role</h2>
+        <ul>
+          <li><strong>END_USER</strong>: 3</li>
+          <li><strong>Department_Head</strong>: 2</li>
+          <li><strong>ADMIN</strong>: 1</li>
+        </ul>
+      </div>
+
+      <div class="footer">
+        <p>Generated by Users List Script | 11/29/2025, 11:04:15 AM</p>
+      </div>
+    </div>
+  </body>
+</html>

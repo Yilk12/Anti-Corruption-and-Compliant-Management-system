@@ -1,0 +1,10 @@
+{
+  "OK": "OK",
+  "CREATED": "Resource created successfully.",
+  "UPDATED": "Resource updated successfully.",
+  "DELETED": "Resource deleted successfully.",
+  "UNAUTHORIZED": "You are not authorized to perform this action.",
+  "FORBIDDEN": "Access to this resource is forbidden.",
+  "NOT_FOUND": "The requested resource was not found.",
+  "SERVER_ERROR": "An unexpected error occurred. Please try again later."
+}

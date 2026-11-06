@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    /* === Core Settings === */
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2019",
+    "lib": ["esnext"],
+    "ignoreDeprecations": "5.0",
+
+    /* === Output & Paths === */
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@shared/*": ["../shared/src/*"]
+    },
+
+    /* === Decorator & Metadata Support === */
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    /* === Build Behavior === */
+    "declaration": true,
+    "removeComments": true,
+    "sourceMap": true,
+    "incremental": true,
+
+    /* === Error & Type Control === */
+    "skipLibCheck": true,
+    "strict": false,
+    "strictNullChecks": false,
+    "noEmitOnError": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "test",
+    "**/*.spec.ts"
+  ]
+}

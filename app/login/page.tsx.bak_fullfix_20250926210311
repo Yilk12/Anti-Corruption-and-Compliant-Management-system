@@ -1,0 +1,416 @@
+﻿"use client"
+
+import React, { useState } from "react"
+import { useRouter } from "next/navigation"
+
+const API_BASE_URL = "http://localhost:3005/auth"
+
+type RegisterForm = {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  phone: string
+  department: string
+  role: "END_USER"
+  userType: "INTERNAL" | "EXTERNAL"
+}
+
+enum Tabs {
+  Login = "login",
+  Register = "register",
+}
+
+export default function LoginPage() {
+  const router = useRouter()
+
+  // Tabs
+  const [activeTab, setActiveTab] = useState<Tabs>(Tabs.Login)
+
+  // Login state
+  const [loginData, setLoginData] = useState({ email: "", password: "" })
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginMsg, setLoginMsg] = useState<string>("")
+
+  // Register state
+  const [regData, setRegData] = useState<RegisterForm>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    phone: "",
+    department: "",
+    role: "END_USER",
+    userType: "INTERNAL",
+  })
+  const [regLoading, setRegLoading] = useState(false)
+  const [regMsg, setRegMsg] = useState<string>("")
+  const [regConfirmPassword, setRegConfirmPassword] = useState<string>("")
+
+  // Handlers
+  const onLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoginData({ ...loginData, [e.target.name]: e.target.value })
+  }
+
+  const onRegisterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target
+    setRegData({ ...regData, [name]: value } as RegisterForm)
+  }
+
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoginLoading(true)
+    setLoginMsg("")
+    try {
+      const res = await fetch(`${API_BASE_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(loginData),
+      })
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(errText || "Invalid credentials")
+      }
+      const data = await res.json()
+      localStorage.setItem("token", data.access_token || "")
+      setLoginMsg(" Login successful. Redirecting")
+      router.push("/dashboard")
+    } catch (err: any) {
+      setLoginMsg(` ${err?.message || "Login failed"}`)
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setRegLoading(true)
+    setRegMsg("")
+    // simple client-side password confirmation check
+    if (regData.password !== regConfirmPassword) {
+      setRegLoading(false)
+      setRegMsg(" Passwords do not match")
+      return
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(regData),
+      })
+      if (!res.ok) {
+        const errText = await res.text()
+        throw new Error(errText || "Registration failed")
+      }
+      await res.json()
+      setRegMsg(" Account created successfully. You can now log in.")
+      setTimeout(() => setActiveTab(Tabs.Login), 600)
+    } catch (err: any) {
+      setRegMsg(` ${err?.message || "Registration failed"}`)
+    } finally {
+      setRegLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      {/* Login Header (Full width; centered, taller) */}
+      <div style={{ background: "#fe6100", width: "100%" }}>
+        <div
+          className="w-full flex items-center justify-center gap-4 px-4"
+          style={{ height: 140 }}
+        >
+          <img
+            src="/gallery/ecsc.jpg"
+            alt="ECSC Logo"
+            width={80}
+            height={80}
+            style={{ borderRadius: 12, objectFit: "cover" }}
+          />
+          <div style={{ color: "#fff", textAlign: "center" }}>
+            <div style={{ fontWeight: 900, fontSize: "1.15rem", lineHeight: 1.1 }}>
+              የፌዴራል ሲቪል ሰርቪስ ኮሚሽን
+            </div>
+            <div style={{ fontWeight: 700, fontSize: ".98rem", opacity: 0.95 }}>
+              Federal Civil Service Commission
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Title between header and workspace */}
+      <div
+        style={{
+          width: "100%",
+          textAlign: "center",
+          padding: "10px 0",
+          color: "#222e3c",
+          fontWeight: 900,
+          fontSize: "1.1rem",
+        }}
+      >
+        Help desk and Knowledge Base System
+      </div>
+
+      {/* Login Card Container */}
+      <div
+        className="px-4 py-6 flex items-center justify-center"
+        style={{ minHeight: "calc(100vh - 140px)" }}
+      >
+        <div
+          className="w-full max-w-xl rounded-lg shadow-lg p-8"
+          style={{ backgroundColor: "rgba(255,255,255,0.92)" }}
+        >
+          {/* Tabs */}
+          <div className="flex justify-center mb-6 gap-3">
+            <button
+              className="px-5 py-2 font-semibold rounded-md transition-colors"
+              style={
+                activeTab === Tabs.Login
+                  ? { backgroundColor: "#fe6100", color: "#fff", border: "2px solid #fe6100" }
+                  : { backgroundColor: "transparent", color: "#fe6100", border: "2px solid #fe6100" }
+              }
+              onClick={() => setActiveTab(Tabs.Login)}
+            >
+              Login
+            </button>
+            <button
+              className="px-5 py-2 font-semibold rounded-md transition-colors"
+              style={
+                activeTab === Tabs.Register
+                  ? { backgroundColor: "#fe6100", color: "#fff", border: "2px solid #fe6100" }
+                  : { backgroundColor: "transparent", color: "#fe6100", border: "2px solid #fe6100" }
+              }
+              onClick={() => setActiveTab(Tabs.Register)}
+            >
+              Register
+            </button>
+          </div>
+
+          {/* Login Form */}
+          {activeTab === Tabs.Login && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+                Login
+              </h2>
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div>
+                  <label htmlFor="login-email" className="block text-sm text-gray-600 mb-1">
+                    Email
+                  </label>
+                  <input
+                    id="login-email"
+                    type="email"
+                    name="email"
+                    placeholder="Email"
+                    value={loginData.email}
+                    onChange={onLoginChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label htmlFor="login-password" className="block text-sm text-gray-600 mb-1">
+                    Password
+                  </label>
+                  <input
+                    id="login-password"
+                    type="password"
+                    name="password"
+                    placeholder="Password"
+                    value={loginData.password}
+                    onChange={onLoginChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loginLoading}
+                  className="w-full text-white py-2 rounded-md transition"
+                  style={{ backgroundColor: "#fe6100" }}
+                >
+                  {loginLoading ? "Logging in" : "Login"}
+                </button>
+              </form>
+              {loginMsg && (
+                <p className="mt-4 text-center text-sm">{loginMsg}</p>
+              )}
+            </div>
+          )}
+
+          {/* Register Form */}
+          {activeTab === Tabs.Register && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
+                Create Account
+              </h2>
+              <form onSubmit={handleRegisterSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-fname" className="block text-sm text-gray-600 mb-1">
+                      First Name
+                    </label>
+                    <input
+                      id="reg-fname"
+                      type="text"
+                      name="firstName"
+                      placeholder="First Name"
+                      value={regData.firstName}
+                      onChange={onRegisterChange}
+                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-lname" className="block text-sm text-gray-600 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      id="reg-lname"
+                      type="text"
+                      name="lastName"
+                      placeholder="Last Name"
+                      value={regData.lastName}
+                      onChange={onRegisterChange}
+                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="reg-email" className="block text-sm text-gray-600 mb-1">
+                    Email
+                  </label>
+                  <input
+                    id="reg-email"
+                    type="email"
+                    name="email"
+                    placeholder="user@csc.gov.et"
+                    value={regData.email}
+                    onChange={onRegisterChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-password" className="block text-sm text-gray-600 mb-1">
+                      Password
+                    </label>
+                    <input
+                      id="reg-password"
+                      type="password"
+                      name="password"
+                      placeholder="Password"
+                      value={regData.password}
+                      onChange={onRegisterChange}
+                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-confirm-password" className="block text-sm text-gray-600 mb-1">
+                      Confirm Password
+                    </label>
+                    <input
+                      id="reg-confirm-password"
+                      type="password"
+                      name="confirmPassword"
+                      placeholder="Confirm Password"
+                      value={regConfirmPassword}
+                      onChange={(e) => setRegConfirmPassword(e.target.value)}
+                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="reg-phone" className="block text sm text-gray-600 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    id="reg-phone"
+                    type="tel"
+                    name="phone"
+                    placeholder="+251911234567"
+                    value={regData.phone}
+                    onChange={onRegisterChange}
+                    className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="reg-dept" className="block text-sm text-gray-600 mb-1">
+                      Department
+                    </label>
+                    <input
+                      id="reg-dept"
+                      type="text"
+                      name="department"
+                      placeholder="Human Resources"
+                      value={regData.department}
+                      onChange={onRegisterChange}
+                      className="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-role" className="block text-sm text-gray-600 mb-1">
+                      Role
+                    </label>
+                    <select
+                      id="reg-role"
+                      name="role"
+                      value={regData.role}
+                      onChange={onRegisterChange}
+                      className="w-full border border-gray-300 rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="END_USER">End User</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="reg-usertype" className="block text-sm text-gray-600 mb-1">
+                    User Type
+                  </label>
+                  <select
+                    id="reg-usertype"
+                    name="userType"
+                    value={regData.userType}
+                    onChange={onRegisterChange}
+                    className="w-full border border-gray-300 rounded-md p-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="INTERNAL">Internal</option>
+                    <option value="EXTERNAL">External</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={regLoading}
+                  className="w-full text-white py-2 rounded-md transition"
+                  style={{ backgroundColor: "#fe6100" }}
+                >
+                  {regLoading ? "Creating account" : "Create account"}
+                </button>
+              </form>
+
+              {regMsg && (
+                <p className="mt-4 text-center text-sm">{regMsg}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}

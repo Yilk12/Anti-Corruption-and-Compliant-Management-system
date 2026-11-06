@@ -1,0 +1,254 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Removed global window background override to allow normal backgrounds across pages */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated color tokens for Ethiopian Civil Service Commission theme */
+  --background: #f2f0e9; /* Warm light beige */
+  --foreground: oklch(0.35 0.02 240); /* Dark cyan-gray */
+  --card: oklch(0.98 0.01 200); /* Light cyan */
+  --card-foreground: oklch(0.25 0.03 200); /* Dark cyan */
+  --popover: oklch(0.99 0 0);
+  --popover-foreground: oklch(0.3 0.02 240);
+  --primary: oklch(0.25 0.03 200); /* Cyan-800 equivalent */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.7 0.15 60); /* Amber equivalent */
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.96 0.01 200);
+  --muted-foreground: oklch(0.45 0.02 240);
+  --accent: oklch(0.7 0.15 60); /* Amber accent */
+  --accent-foreground: oklch(1 0 0);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.85 0.01 200);
+  --input: oklch(0.98 0.01 200);
+  --ring: oklch(0.25 0.03 200 / 0.5);
+  --chart-1: oklch(0.45 0.02 240);
+  --chart-2: oklch(0.55 0.2 25);
+  --chart-3: oklch(0.7 0.15 60);
+  --chart-4: oklch(0.5 0.15 200);
+  --chart-5: oklch(0.25 0.03 200);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.98 0.01 200);
+  --sidebar-foreground: oklch(0.25 0.03 200);
+  --sidebar-primary: oklch(0.7 0.15 60);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.55 0.2 25);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.85 0.01 200);
+  --sidebar-ring: oklch(0.25 0.03 200 / 0.5);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Responsive Design for Header and Layout */
+@media (max-width: 768px) {
+  /* Mobile header adjustments */
+  header nav {
+    display: none !important;
+  }
+
+  /* Show mobile menu toggle */
+  .mobile-menu-toggle {
+    display: flex !important;
+  }
+
+  /* Mobile search bar */
+  .mobile-search {
+    display: block !important;
+  }
+
+  /* Desktop search bar hidden on mobile */
+  .desktop-search {
+    display: none !important;
+  }
+
+  /* Adjust header logo text */
+  .header-logo-text {
+    display: none !important;
+  }
+
+  /* User menu text hidden on mobile */
+  .user-menu-text {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  /* Show desktop elements */
+  .desktop-search {
+    display: block !important;
+  }
+
+  .mobile-search {
+    display: none !important;
+  }
+
+  .header-logo-text {
+    display: block !important;
+  }
+
+  .user-menu-text {
+    display: block !important;
+  }
+}
+
+/* Focus indicators for accessibility */
+button:focus,
+a:focus,
+input:focus {
+  outline: 2px solid #1565c0;
+  outline-offset: 2px;
+}
+
+/* Smooth transitions - exclude interactive elements */
+*:not(button):not(a):not(input):not(select):not(textarea):not(
+    [role="button"]
+  ):not([role="combobox"]):not([role="listbox"]):not([role="option"]) {
+  transition: all 0.2s ease;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .header {
+    border-bottom: 2px solid #000;
+  }
+
+  .footer {
+    border-top: 2px solid #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Delicate watermark style for header search input */
+.search-watermark::placeholder {
+  color: #64748b; /* slate-500 */
+  opacity: 0.6;
+  letter-spacing: 0.3px;
+  font-size: 0.85em;
+}
+
+/* Center watermark text only when placeholder is visible */
+.search-watermark {
+  text-align: left;
+}
+.search-watermark:placeholder-shown {
+  text-align: center;
+}
+
+/* Required field asterisk marker */
+.required-marker::after {
+  content: " *";
+  color: #b91c1c; /* red-700 */
+  font-weight: 700;
+}
+
+/* Auto-apply required marker when label is immediately followed by a required field */
+label:has(+ input[required])::after,
+label:has(+ select[required])::after,
+label:has(+ textarea[required])::after {
+  content: " *";
+  color: #b91c1c; /* red-700 */
+  font-weight: 700;
+}
+
+/* Amharic font support */
+body {
+  font-family: "Noto Sans Ethiopic", "Abyssinica SIL", Arial, sans-serif;
+}
+
+.amharic {
+  font-family: "Noto Sans Ethiopic", "Abyssinica SIL", sans-serif;
+}

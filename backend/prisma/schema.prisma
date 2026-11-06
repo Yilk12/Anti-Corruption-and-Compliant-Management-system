@@ -1,0 +1,1366 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum FuelAmountType {
+  LITER
+  COUPON
+  CASH
+}
+
+enum FuelStatus {
+  FUELED
+  NOT_FUELED
+  HALF_FUELED
+}
+
+model FuelRequest {
+  id          String @id @default(uuid()) @db.Uuid
+  requestorId String @db.Uuid
+  vehicleId   String @db.Uuid
+
+  date                 DateTime
+  odometer             Int
+  amount               Float
+  amountType           FuelAmountType
+  notes                String?
+  status               FuelStatus     @default(NOT_FUELED)
+  returnOdometerKm     Int?
+  remainingFuelRequest Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  user    User    @relation(fields: [requestorId], references: [id])
+}
+
+// ====================================================================
+// WORKFLOW: OVERTIME REQUEST MODEL
+// ====================================================================
+
+model OvertimeRequest {
+  id           String                @id @default(uuid()) @db.Uuid
+  reqId        String                @db.Uuid
+  departmentId String?               @db.Uuid
+  overtimeType OvertimeType
+  durationType OvertimeDurationType
+  startTime    DateTime?
+  endTime      DateTime?
+  dates        DateTime[]
+  description  String?
+  status       RequestDecisionStatus @default(PENDING)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  // Relations
+  requestor                User?                      @relation(fields: [reqId], references: [id])
+  department               Department?                @relation(fields: [departmentId], references: [id])
+  notifications            OvertimeNotification[]
+  // Vehicle                  Vehicle?                   @relation(fields: [vehicleId], references: [id])
+  // vehicleId                String?                    @db.Uuid
+  // HrOvertimeNotification   HrOvertimeNotification[]
+  // UserOvertimeNotification UserOvertimeNotification[]
+
+  @@index([reqId])
+  @@index([departmentId])
+}
+
+// ====================================================================
+// WORKFLOW: OVERTIME NOTIFICATION MODEL
+// ====================================================================
+
+model OvertimeNotification {
+  id                String   @id @default(uuid()) @db.Uuid
+  message           String
+  userId            String   @db.Uuid
+  overtimeRequestId String   @db.Uuid
+  departmentId      String?  @db.Uuid
+  createdAt         DateTime @default(now())
+
+  // Relations
+  user            User            @relation(fields: [userId], references: [id])
+  overtimeRequest OvertimeRequest @relation(fields: [overtimeRequestId], references: [id])
+  department      Department?     @relation(fields: [departmentId], references: [id])
+  // Vehicle         Vehicle?        @relation(fields: [vehicleId], references: [id])
+  // vehicleId       String?         @db.Uuid
+
+  @@index([userId])
+  @@index([overtimeRequestId])
+  @@index([departmentId])
+}
+
+// ====================================================================
+// WORKFLOW: USER OVERTIME NOTIFICATION MODEL (per-requester)
+// ====================================================================
+
+// model UserOvertimeNotification {
+//   id                String   @id @default(uuid()) @db.Uuid
+//   userId            String   @db.Uuid // recipient (request owner)
+//   message           String
+//   overtimeRequestId String   @db.Uuid
+//   departmentId      String?  @db.Uuid
+//   actionByUserId    String?  @db.Uuid
+//   createdAt         DateTime @default(now())
+
+//   // Relations
+//   user            User            @relation("UserOvertimeNotificationRecipient", fields: [userId], references: [id])
+//   actionBy        User?           @relation("UserOvertimeNotificationActionBy", fields: [actionByUserId], references: [id])
+//   overtimeRequest OvertimeRequest @relation(fields: [overtimeRequestId], references: [id])
+//   department      Department?     @relation(fields: [departmentId], references: [id])
+
+//   @@index([userId])
+//   @@index([overtimeRequestId])
+//   @@index([departmentId])
+//   @@index([actionByUserId])
+// }
+
+// ====================================================================
+// WORKFLOW: FIELD NOTIFICATION MODEL
+// ====================================================================
+
+model FieldNotification {
+  id             String   @id @default(uuid()) @db.Uuid
+  message        String
+  userId         String   @db.Uuid
+  fieldRequestId String   @db.Uuid
+  departmentId   String?  @db.Uuid
+  createdAt      DateTime @default(now())
+
+  // Relations
+  user         User         @relation(fields: [userId], references: [id])
+  fieldRequest FieldRequest @relation(fields: [fieldRequestId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
+
+  @@index([userId])
+  @@index([fieldRequestId])
+  @@index([departmentId])
+}
+
+// ====================================================================
+// USER NOTIFICATION MODEL (Generic per-user notifications)
+// ====================================================================
+model UserNotification {
+  id        String                 @id @default(uuid()) @db.Uuid
+  userId    String                 @db.Uuid
+  message   String
+  status    RequestDecisionStatus?
+  isRead    Boolean                @default(false)
+  createdAt DateTime               @default(now())
+  type      String?                // Notification type (e.g., COMMISSIONER_DECISION)
+  relatedId String?                // Related entity ID (e.g., petition ID)
+
+  // Optional linkage to a workflow FieldRequest and Department and the actor
+  fieldRequestId String? @db.Uuid
+  departmentId   String? @db.Uuid
+  actionByUserId String? @db.Uuid
+
+  // Relations
+  user         User          @relation("UserNotificationRecipient", fields: [userId], references: [id])
+  actionBy     User?         @relation("UserNotificationActionBy", fields: [actionByUserId], references: [id])
+  fieldRequest FieldRequest? @relation(fields: [fieldRequestId], references: [id])
+  department   Department?   @relation(fields: [departmentId], references: [id])
+
+  @@index([userId])
+  @@index([fieldRequestId])
+  @@index([departmentId])
+  @@index([actionByUserId])
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ====================================================================
+// CORE ENUMS
+// ====================================================================
+
+enum UserRole {
+  ADMIN
+  Department_Head
+  Commissioner
+  END_USER
+  Driver
+  Maintenace_Team
+  Announcement_Creator
+  Women_Social_Inclusion
+  Feedback_Complaint_Manager
+  Feedback_Complaint_Officer
+  Ethics_Anti_Corruption
+  Ethics_Officer
+  IT_Officer
+  Finance_Department
+  Vehicle_Inspector
+  Administrative_Complaints_Team
+}
+
+enum UserType {
+  INTERNAL
+  EXTERNAL
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum DisabilityType {
+  BLIND
+  DEAF
+  PHYSICAL_OR_MOVEMENT_DISORDER
+  MENTAL_RETARDATION
+  OVERLAPPING_FACES
+  PSYCHOLOGICAL_AND_SOCIAL_DISORDER
+}
+
+// Account status for enabling/disabling user accounts
+enum AccountStatus {
+  ENABLED
+  DISABLED
+}
+
+// Submissions module enums
+enum SubmissionType {
+  COMPLAINT
+  SUGGESTION
+  COMPLIMENT
+  REQUEST
+  INCIDENT
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  ESCALATED
+  MORE_INFO_REQUESTED
+  CLOSED
+}
+
+enum ReadStatus {
+  OPEN
+  CLOSED
+}
+
+enum ScheduleStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  FAILED
+}
+
+// Decision status for general requests (e.g., FieldRequest)
+enum RequestDecisionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ACCEPTED
+  NOT_ACCEPTED
+}
+
+// Overtime enums
+enum OvertimeType {
+  EXTRA_TIME
+  WEEKEND
+}
+
+enum OvertimeDurationType {
+  HALF_TIME
+  FULL_DAY
+}
+
+// ====================================================================
+// CORE MODELS
+// ====================================================================
+
+// ====================================================================
+// USER MODEL
+// ====================================================================
+
+model User {
+  id             String          @id @default(uuid()) @db.Uuid
+  email          String          @unique
+  firstName      String
+  middleName     String?
+  lastName       String
+  firstNameAm    String?
+  middleNameAm   String?
+  lastNameAm     String?
+  password       String
+  phone          String?
+  employeeId     String?         @unique
+  position       String?
+  photoUrl       String?
+  roles          String[]        @default([])
+  userType       UserType
+  gender         Gender?
+  isDisabled     Boolean         @default(false)
+  disabilityType DisabilityType?
+  departmentId   String?         @db.Uuid
+  department     Department?     @relation(fields: [departmentId], references: [id])
+  isActive       Boolean         @default(true)
+  accountStatus  AccountStatus   @default(ENABLED)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  // Relations
+  submissions         Submission[]      @relation("SubmissionUser")
+  receivedSubmissions Submission[]      @relation("SubmissionRecipient")
+  userPermissions      UserPermission[]
+  FieldRequest         FieldRequest[]
+  FieldNotification    FieldNotification[]
+
+  // ✅ User notifications (generic, recipient and actor)
+  userNotificationsReceived         UserNotification[]         @relation("UserNotificationRecipient")
+  userNotificationsActioned         UserNotification[]         @relation("UserNotificationActionBy")
+  OvertimeRequest                   OvertimeRequest[]
+  OvertimeNotification              OvertimeNotification[]
+  // userOvertimeNotificationsReceived UserOvertimeNotification[] @relation("UserOvertimeNotificationRecipient")
+  // userOvertimeNotificationsActioned UserOvertimeNotification[] @relation("UserOvertimeNotificationActionBy")
+  AnnouncementComment               AnnouncementComment[]
+  DriverDetaile                     DriverDetaile[]
+  thirdPartyReportsRequested        ThirdPartySexualAssault[]  @relation("ThirdPartyRequester")
+  thirdPartyReportsVictim           ThirdPartySexualAssault[]  @relation("ThirdPartyVictim")
+  womenInclusionVictimReports       WomenadnSocilaInclusion[]  @relation("WomenInclusionVictim")
+  womenInclusionOffenderReports     WomenadnSocilaInclusion[]  @relation("WomenInclusionOffender")
+
+  // General messaging relations
+  sentDirectMessages   Message[] @relation("DirectMessageSender")
+  receivedDirectMessages Message[] @relation("DirectMessageReceiver")
+
+  // Secret Code security relation
+  secretCode           SecretCode?
+
+  AnnouncementCommentReply     AnnouncementCommentReply[]
+
+  // Ethics & Anti-Corruption Relations
+  createdComplaints      Complaint[]          @relation("ComplaintCreator")
+  assignedComplaints     Complaint[]          @relation("ComplaintAssignee")
+  screenedComplaints    Complaint[]          @relation("ComplaintScreener")
+  assessedComplaints    Complaint[]          @relation("ComplaintAssessor")
+  viewedComplaints      Complaint[]          @relation("ComplaintViewer")
+  assignedInvestigations Investigation[] @relation("InvestigationAssignee")
+  supervisedInvestigations Investigation[] @relation("InvestigationSupervisor")
+  assignedInvestigationsAsAssigner Investigation[] @relation("InvestigationAssigner")
+  reviewedInvestigations Investigation[] @relation("InvestigationReviewer")
+  decidedInvestigations Investigation[] @relation("InvestigationDecisionMaker")
+  approvedReferralInvestigations Investigation[] @relation("InvestigationReferralApprover")
+  closedInvestigations  Investigation[] @relation("InvestigationCloser")
+  conductedActivities   InvestigationActivity[] @relation("ActivityConductor")
+  uploadedEvidence       Evidence[]           @relation("EvidenceUploader")
+  reviewedDeclarations   Declaration[]        @relation("DeclarationReviewer")
+  declarations           Declaration[]
+  policyAcknowledgments  PolicyAcknowledgment[]
+  trainingRegistrations  TrainingRegistration[]
+  sentMessages           ComplaintMessage[]   @relation("MessageSender")
+  uploadedAttachments    ComplaintAttachment[] @relation("AttachmentUploader")
+  fuelRequests                 FuelRequest[]
+
+  // Feedback & Complaints Management System Relations
+  headedDepartments     Department[]         @relation("DepartmentHead")
+  assignedPetitions     Petition[]           @relation("PetitionOfficer")
+  assignedPetitionsAsManager Petition[]       @relation("PetitionAssigner")
+  submittedResponses    DepartmentalResponse[] @relation("ResponseSubmitter")
+  reviewedResponses     DepartmentalResponse[] @relation("ResponseReviewer")
+  submittedReports      InvestigationReport[] @relation("ReportSubmitter")
+  reviewedReports       InvestigationReport[] @relation("ReportReviewer")
+  finalDecisions        InvestigationReport[] @relation("FinalDecisionMaker")
+}
+
+// ====================================================================
+// MODULE & PERMISSION MODELS (CORRECTED)
+// ====================================================================
+
+model Module {
+  id              Int              @id @default(autoincrement())
+  name            String           @unique
+  userPermissions UserPermission[]
+}
+
+model Permission {
+  id              Int              @id @default(autoincrement())
+  action          String           @unique
+  userPermissions UserPermission[]
+}
+
+// ====================================================================
+// USER PERMISSIONS (JOIN TABLE) - CORRECTED
+// ====================================================================
+
+model UserPermission {
+  id           Int      @id @default(autoincrement())
+  userId       String   @db.Uuid
+  moduleId     Int
+  permissionId Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user       User       @relation(fields: [userId], references: [id])
+  module     Module     @relation(fields: [moduleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([userId, moduleId, permissionId])
+}
+
+model Department {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  nameAm      String?
+  description String?
+  code        String?  @unique // e.g., HR, FINANCE, IT
+  headId      String?  @db.Uuid
+  head        User?    @relation("DepartmentHead", fields: [headId], references: [id])
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  submissions           Submission[]
+  users                 User[]
+  FieldRequest          FieldRequest[]
+  FieldNotification     FieldNotification[]
+  UserNotification      UserNotification[]
+  womenInclusionReports WomenadnSocilaInclusion[]
+
+  // Overtime relations
+  OvertimeRequest          OvertimeRequest[]
+  OvertimeNotification     OvertimeNotification[]
+
+  // Feedback & Complaints Management System Relations
+  complaints               Complaint[] @relation("ComplaintDepartment")
+}
+
+// ====================================================================
+// SUBMISSIONS & REPORTS MODELS
+// ====================================================================
+
+model Submission {
+  id              String         @id @default(uuid()) @db.Uuid
+  userId          String?        @db.Uuid
+  recipientUserId String?        @db.Uuid
+  departmentId    String?        @db.Uuid
+  anonymous       Boolean        @default(false)
+  type            SubmissionType
+  message         String         @map("description")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  user          User?                  @relation("SubmissionUser", fields: [userId], references: [id])
+  recipientUser User?                  @relation("SubmissionRecipient", fields: [recipientUserId], references: [id])
+  department    Department?            @relation(fields: [departmentId], references: [id])
+  attachments   SubmissionAttachment[]
+
+  @@index([recipientUserId])
+  @@index([departmentId])
+}
+
+// Voicebox attachments
+model SubmissionAttachment {
+  id           String   @id @default(uuid()) @db.Uuid
+  submissionId String   @db.Uuid
+  filename     String
+  filepath     String
+  mimetype     String
+  size         Int
+  createdAt    DateTime @default(now())
+
+  submission Submission @relation(fields: [submissionId], references: [id])
+}
+
+// ====================================================================
+// WORKFLOW: FIELD REQUEST MODEL
+// ====================================================================
+
+model FieldRequest {
+  id           String                @id @default(uuid()) @db.Uuid
+  reqId        String                @db.Uuid
+  departmentId String?               @db.Uuid
+  fieldType    String
+  description  String?
+  location     String?
+  fromDate     DateTime
+  toDate       DateTime
+  startTime    DateTime?
+  endTime      DateTime?
+  durationType String?
+  isRead       ReadStatus            @default(CLOSED)
+  status       RequestDecisionStatus @default(PENDING)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  // Relations
+  requestor         User?               @relation(fields: [reqId], references: [id])
+  department        Department?         @relation(fields: [departmentId], references: [id])
+  FieldNotification FieldNotification[]
+  UserNotification  UserNotification[]
+
+  @@index([reqId])
+  @@index([departmentId])
+}
+
+model DriverDetaile {
+  id                    String   @id @default(uuid()) @db.Uuid
+  userId                String   @db.Uuid
+  empId                 String
+  dateOfBirth           DateTime
+  address               String?
+  licenceNumber         String
+  licenceClass          String
+  licenceExpiredDate    DateTime
+  issuedBy              String
+  vehicleId             String?  @db.Uuid
+  emergencyContactName  String
+  emergencyContactPhone String
+  additionalInformation String?
+  licenceCertificate    String?
+  image                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, empId])
+  @@index([userId])
+}
+
+model WomenadnSocilaInclusion {
+  id                          String   @id @default(uuid()) @db.Uuid
+  typeOfMisconduct            String
+  dateTime                    DateTime
+  location                    String?
+  detailDescriptionOfIncident String?
+  reportedBefore              Boolean
+  medicalHelpNeeded           Boolean
+  fileUrl                     String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  victimId                    String?  @db.Uuid
+  departmentId                String?  @db.Uuid
+  userId                      String?  @db.Uuid
+
+  victim            User?                     @relation("WomenInclusionVictim", fields: [victimId], references: [id])
+  department        Department?               @relation(fields: [departmentId], references: [id])
+  offender          User?                     @relation("WomenInclusionOffender", fields: [userId], references: [id])
+  thirdPartyReports ThirdPartySexualAssault[]
+
+  @@index([victimId])
+  @@index([departmentId])
+  @@index([userId])
+}
+
+model ThirdPartySexualAssault {
+  id                           String   @id @default(uuid()) @db.Uuid
+  misconductId                 String   @db.Uuid
+  typeOfMisconduct             String
+  dateTime                     DateTime
+  location                     String?
+  descriptionOfWhatWasObserved String?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+
+  reqId    String  @db.Uuid
+  victimId String? @db.Uuid
+
+  misconduct WomenadnSocilaInclusion @relation(fields: [misconductId], references: [id])
+  requester  User                    @relation("ThirdPartyRequester", fields: [reqId], references: [id])
+  victim     User?                   @relation("ThirdPartyVictim", fields: [victimId], references: [id])
+
+  @@index([misconductId])
+  @@index([reqId])
+  @@index([victimId])
+}
+
+// Password policy configuration
+model PasswordPolicy {
+  id                       Int      @id @default(autoincrement())
+  minLength                Int      @default(12)
+  requireUppercase         Boolean  @default(true)
+  requireLowercase         Boolean  @default(true)
+  requireDigit             Boolean  @default(true)
+  requireSpecialcharSymbol Boolean  @default(true)
+  expirationDays           Int      @default(90)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+}
+
+// ====================================================================
+// ANNOUNCEMENTS MODELS
+// ====================================================================
+
+model Announcement {
+  id           String   @id @default(uuid()) @db.Uuid
+  title        String
+  description  String?
+  date         DateTime
+  likeCount    Int      @default(0)
+  dislikeCount Int      @default(0)
+  imageUrl     String?
+  status       String   @default("published")
+  category     String   @default("General")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  comments AnnouncementComment[]
+}
+
+model AnnouncementComment {
+  id             String   @id @default(uuid()) @db.Uuid
+  announcementId String   @db.Uuid
+  authorId       String?  @db.Uuid
+  content        String
+  createdAt      DateTime @default(now())
+
+  // Relations
+  announcement Announcement               @relation(fields: [announcementId], references: [id])
+  author       User?                      @relation(fields: [authorId], references: [id])
+  replies      AnnouncementCommentReply[]
+
+  @@index([announcementId])
+  @@index([authorId])
+}
+
+model AnnouncementCommentReply {
+  id        String   @id @default(uuid()) @db.Uuid
+  commentId String   @db.Uuid
+  authorId  String?  @db.Uuid
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relations
+  comment AnnouncementComment @relation(fields: [commentId], references: [id])
+  author  User?               @relation(fields: [authorId], references: [id])
+
+  @@index([commentId])
+  @@index([authorId])
+}
+
+// ====================================================================
+// SETTINGS MODEL
+// ====================================================================
+
+model Setting {
+  id          String   @id @default(uuid()) @db.Uuid
+  settingKey  String   @unique
+  settingValue String
+  description String?
+  category    String?  // e.g., "general", "module", "notification"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([settingKey])
+}
+
+// ====================================================================
+// ETHICS & ANTI-CORRUPTION MODULE MODELS
+// ====================================================================
+
+model Complaint {
+  id                String   @id @default(cuid())
+  referenceNumber   String   @unique // e.g., FCSC-2026-0001
+  trackingId        String?  @unique // e.g., FCSC-2026-A8K7M2Q9 for external tracking
+  verificationSecret String? // Secret code for external tracking verification
+  reportingChannel  String   // public_portal, employee, telephone, referral
+  isAnonymous       Boolean  @default(false)
+  isInternal        Boolean  @default(false) // true for internal employees, false for external sources
+  isFeedback        Boolean  @default(false) // true for feedback complaints, false for ethics/anti-corruption reports
+
+  // Complainant Information (if not anonymous)
+  complainantName   String?
+  complainantEmail  String?
+  complainantPhone  String?
+  complainantDepartment String?
+  complainantPosition String?
+
+  // Complaint Details
+  category          String   // Bribery, Fraud, Favoritism, Abuse of Authority, Conflict of Interest, etc.
+  institution       String?
+  departmentName    String?  // Renamed from department to avoid conflict with relation
+  subject           String?  // Person, office, or organization involved
+  perpetratorPosition String?
+  incidentDate      DateTime?
+  incidentLocation  String?
+  description       String   @db.Text
+  complaintText     String?  @db.Text // Additional complaint text for administrative complaints
+  priority          String   @default("Low") // Low, High, Urgent
+
+  // Screening Information (Ethics Officer / Complaint Registration Officer)
+  screeningNotes    String?  @db.Text
+  isDuplicate       Boolean  @default(false)
+  duplicateReference String?
+  safetyRisk        String?  @default("None") // None, Low, Medium, High, Urgent
+  retaliationRisk   String?  @default("None") // None, Low, Medium, High, Urgent
+  confidentialityLevel String? @default("Standard") // Standard, High, Confidential
+  documentsVerified Boolean  @default(false)
+  documentsRequired String?  @db.Text
+
+  // Assessment Information (Assessment / Triage Officer)
+  assessmentNotes   String?  @db.Text
+  jurisdictionCheck Boolean?  // Is within FCSC mandate?
+  credibilityCheck  String?  // High, Medium, Low
+  urgencyCheck      String?  // High, Medium, Low
+  conflictCheck     Boolean?  // Conflict of interest detected
+  recommendedRoute  String?  // Investigation, Referral, Further Information, Duplicate Closure
+  recommendedReferral String?  // If referred, to which body
+  assessedById      String?  @db.Uuid
+  assessedBy        User?    @relation("ComplaintAssessor", fields: [assessedById], references: [id])
+  assessedAt        DateTime?
+
+  // Workflow Status - Extended for Feedback System and Administrative Complaints
+  status            String   @default("Submitted") // Draft, Submitted, Under Manager Review, Assigned to Department, Under Department Review, Response Submitted, Under Response Review, Response Returned for Correction, Response Sent to Complainant, Accepted, Petition Submitted, Under Petition Review, Assigned for Investigation, Under Investigation, Investigation Report Submitted, Investigation Returned for Correction, Under Final Decision Review, Final Decision Issued, Closed, Reopened, Under_Manager_Review, Assigned_To_Investigation_Team, Investigation_Completed, Pending_Commissioner_Review, Decision_Approved, Response_Sent
+
+  // Consent and Declaration
+  consentDeclaration Boolean  @default(false)
+  consentAccuracy   Boolean  @default(false)
+
+  // Timestamps
+  submittedAt       DateTime?
+  registeredAt      DateTime?
+  screenedAt        DateTime?
+  assignedAt        DateTime?
+  closedAt          DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  investigation      Investigation?
+  evidence          Evidence[]
+  attachments       ComplaintAttachment[] @relation("ComplaintAttachments")
+  assigneeId        String?  @db.Uuid
+  assignee          User?    @relation("ComplaintAssignee", fields: [assigneeId], references: [id])
+  createdBy         String?  @db.Uuid
+  creator           User?    @relation("ComplaintCreator", fields: [createdBy], references: [id])
+  screenedById      String?  @db.Uuid
+  screenedBy        User?    @relation("ComplaintScreener", fields: [screenedById], references: [id])
+  messages          ComplaintMessage[] @relation("ComplaintMessages")
+
+  // Feedback System Relationships
+  departmentId       String?  @db.Uuid
+  department         Department? @relation("ComplaintDepartment", fields: [departmentId], references: [id])
+  petitions         Petition[]
+  departmentalResponse DepartmentalResponse?
+
+  // Anonymous access
+  anonymousToken     String?  @unique // Secure token for anonymous complainants to access their complaint
+
+  // View tracking for manager dashboard
+  viewedAt          DateTime? // When the complaint was first viewed by a manager
+  viewedById        String?  @db.Uuid // Which manager viewed the complaint
+  viewedBy          User?    @relation("ComplaintViewer", fields: [viewedById], references: [id])
+
+  @@index([status])
+  @@index([category])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([screenedById])
+  @@index([viewedAt])
+}
+
+model ComplaintMessage {
+  id                String   @id @default(cuid())
+  complaintId       String
+  complaint         Complaint @relation("ComplaintMessages", fields: [complaintId], references: [id], onDelete: Cascade)
+
+  senderId          String?  @db.Uuid
+  sender            User?    @relation("MessageSender", fields: [senderId], references: [id])
+  senderType        String   // COMPLAINANT or DEPARTMENT
+  senderRole        String?  // Ethics_Officer, Complainant, Investigator, Department_Head
+
+  message           String   @db.Text
+  messageType       String   // ACKNOWLEDGMENT, INFORMATION_REQUEST, STATUS_UPDATE, REPLY, OTHER
+  visibility        String   @default("COMPLAINANT_VISIBLE") // COMPLAINANT_VISIBLE or INTERNAL_ONLY
+  isSystemMessage   Boolean  @default(false)
+  deliveryStatus    String   @default("SENT") // SENT, DELIVERED, READ
+
+  attachments       ComplaintAttachment[] @relation("MessageAttachments")
+
+  // Timestamps
+  sentAt            DateTime @default(now())
+  readAt            DateTime?
+  editedAt          DateTime?
+
+  @@index([complaintId])
+  @@index([senderId])
+}
+
+model ComplaintAttachment {
+  id                String   @id @default(cuid())
+  complaintId       String
+  complaint         Complaint @relation("ComplaintAttachments", fields: [complaintId], references: [id], onDelete: Cascade)
+  messageId         String?  // Optional: if attachment belongs to a specific message
+  message           ComplaintMessage? @relation("MessageAttachments", fields: [messageId], references: [id], onDelete: SetNull)
+
+  fileName          String
+  storageKey        String   // Path/key in storage system
+  fileSize          Int?
+  mimeType          String?
+
+  uploadedBy        String?  @db.Uuid
+  uploader          User?    @relation("AttachmentUploader", fields: [uploadedBy], references: [id])
+  uploadedAt        DateTime @default(now())
+
+  securityScanStatus String   @default("PENDING") // PENDING, CLEAN, MALICIOUS, ERROR
+  isDeleted         Boolean  @default(false)
+  deletedAt         DateTime?
+
+  @@index([complaintId])
+  @@index([messageId])
+  @@index([uploadedBy])
+}
+
+// ====================================================================
+// FEEDBACK AND COMPLAINTS MANAGEMENT SYSTEM MODELS
+// ====================================================================
+
+model Petition {
+  id                String   @id @default(cuid())
+  petitionNumber    String   @unique // e.g., PET-2026-0001
+  complaintId       String
+  complaint         Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  
+  reasonForDissatisfaction String @db.Text
+  explanation       String   @db.Text
+  additionalInfo    String?  @db.Text
+  requestedAction   String?  @db.Text
+  
+  status            String   @default("Petition Submitted") // Petition Submitted, Under Petition Review, Assigned for Investigation, Under Investigation, Investigation Report Submitted, Investigation Returned for Correction, Under Final Decision Review, Final Decision Issued, Closed
+  
+  assignedOfficerId String?  @db.Uuid
+  assignedOfficer   User?    @relation("PetitionOfficer", fields: [assignedOfficerId], references: [id])
+  assignedById      String?  @db.Uuid
+  assignedBy        User?    @relation("PetitionAssigner", fields: [assignedById], references: [id])
+  assignedAt        DateTime?
+  
+  investigationInstructions String? @db.Text
+  investigationDeadline DateTime?
+  
+  investigationReport InvestigationReport?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([complaintId])
+  @@index([status])
+  @@index([assignedOfficerId])
+}
+
+model DepartmentalResponse {
+  id                String   @id @default(cuid())
+  responseNumber    String   @unique // e.g., DR-2026-0001
+  complaintId       String   @unique
+  complaint         Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  
+  summary           String   @db.Text
+  investigationConducted String @db.Text
+  findings          String   @db.Text
+  actionsTaken      String   @db.Text
+  proposedActions   String?  @db.Text
+  officialResponse  String   @db.Text
+  recommendations   String?  @db.Text
+  
+  status            String   @default("Response Submitted") // Response Submitted, Under Response Review, Response Returned for Correction, Response Sent to Complainant, Accepted
+  
+  submittedById     String?  @db.Uuid
+  submittedBy       User?    @relation("ResponseSubmitter", fields: [submittedById], references: [id])
+  submittedAt       DateTime?
+  
+  reviewedById      String?  @db.Uuid
+  reviewedBy        User?    @relation("ResponseReviewer", fields: [reviewedById], references: [id])
+  reviewedAt        DateTime?
+  reviewNotes       String?  @db.Text
+  
+  returnedForCorrection Boolean @default(false)
+  returnReason      String?  @db.Text
+  returnedAt        DateTime?
+  
+  attachments       PetitionAttachment[] @relation("ResponseAttachments")
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([complaintId])
+  @@index([status])
+  @@index([submittedById])
+}
+
+model InvestigationReport {
+  id                String   @id @default(cuid())
+  reportNumber      String   @unique // e.g., IR-2026-0001
+  petitionId        String   @unique
+  petition          Petition @relation(fields: [petitionId], references: [id], onDelete: Cascade)
+  
+  background        String?  @db.Text
+  objectives        String?  @db.Text
+  activitiesPerformed String @db.Text
+  evidenceCollected String   @db.Text
+  personsInterviewed String   @db.Text
+  findings          String   @db.Text
+  observations      String   @db.Text
+  conclusions       String   @db.Text
+  recommendations    String   @db.Text
+  
+  status            String   @default("Investigation Report Submitted") // Investigation Report Submitted, Investigation Returned for Correction, Under Final Decision Review, Final Decision Issued, Closed
+  
+  submittedById     String?  @db.Uuid
+  submittedBy       User?    @relation("ReportSubmitter", fields: [submittedById], references: [id])
+  submittedAt       DateTime?
+  
+  reviewedById      String?  @db.Uuid
+  reviewedBy        User?    @relation("ReportReviewer", fields: [reviewedById], references: [id])
+  reviewedAt        DateTime?
+  reviewNotes       String?  @db.Text
+  
+  returnedForCorrection Boolean @default(false)
+  returnReason      String?  @db.Text
+  returnedAt        DateTime?
+  
+  finalDecision     String?  @db.Text
+  finalDecisionById String?  @db.Uuid
+  finalDecisionBy   User?    @relation("FinalDecisionMaker", fields: [finalDecisionById], references: [id])
+  finalDecisionAt   DateTime?
+  
+  attachments       PetitionAttachment[] @relation("ReportAttachments")
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([petitionId])
+  @@index([status])
+  @@index([submittedById])
+}
+
+model PetitionAttachment {
+  id                String   @id @default(cuid())
+  fileName          String
+  storageKey        String
+  fileSize          Int?
+  mimeType          String?
+  
+  // Can belong to either DepartmentalResponse or InvestigationReport
+  departmentalResponseId String?
+  departmentalResponse DepartmentalResponse? @relation("ResponseAttachments", fields: [departmentalResponseId], references: [id], onDelete: Cascade)
+  investigationReportId String?
+  investigationReport InvestigationReport? @relation("ReportAttachments", fields: [investigationReportId], references: [id], onDelete: Cascade)
+  
+  uploadedBy        String?  @db.Uuid
+  uploadedAt        DateTime @default(now())
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model Investigation {
+  id                    String   @id @default(cuid())
+  caseNumber            String   @unique // e.g., CASE-2026-0001
+  
+  // Linked Complaint
+  complaintId           String   @unique
+  complaint             Complaint @relation(fields: [complaintId], references: [id])
+  
+  // Assignment
+  assignedInvestigatorId String?  @db.Uuid
+  assignedInvestigator   User?    @relation("InvestigationAssignee", fields: [assignedInvestigatorId], references: [id])
+  assignedSupervisorId  String?  @db.Uuid
+  assignedSupervisor    User?    @relation("InvestigationSupervisor", fields: [assignedSupervisorId], references: [id])
+  assignedById         String?  @db.Uuid
+  assignedBy           User?    @relation("InvestigationAssigner", fields: [assignedById], references: [id])
+
+  // Investigation Details
+  status                String   @default("Assigned") // Assigned, Under Investigation, Report Submitted, Under Review, Returned for Further Investigation, Pending Decision, Referred, Closed, Reopened
+  scope                 String?  @db.Text
+  objectives            String?  @db.Text
+  investigationPlan     String?  @db.Text
+  
+  // Feedback Investigation Report Fields
+  complaintDetails      String?  @db.Text
+  evidenceDetails       String?  @db.Text
+  evidenceDocuments     String?  @db.Text
+  evidenceMessages      String?  @db.Text
+  rootCause             String?  @db.Text
+  responsibility        String?  @db.Text
+  responsibilityOffice  String?  @db.Text
+  responsibilityPerson   String?  @db.Text
+  impact                String?  @db.Text
+  correctiveAction      String?  @db.Text
+
+  // Dates
+  startDate             DateTime?
+  targetCompletionDate   DateTime?
+  actualCompletionDate   DateTime?
+
+  // Report and Review
+  reportSubmittedAt     DateTime?
+  reportSubmittedById   String?  @db.Uuid
+  reviewedById          String?  @db.Uuid
+  reviewedBy            User?    @relation("InvestigationReviewer", fields: [reviewedById], references: [id])
+  reviewedAt            DateTime?
+  reviewNotes           String?  @db.Text
+  reviewDecision        String?  // Accept, Return for Further Investigation
+
+  // Findings and Recommendations
+  findings              String?  @db.Text
+  recommendation        String?  @db.Text
+  decision              String?  @db.Text
+  decisionAuthority     String?
+  decisionById          String?  @db.Uuid
+  decisionBy           User?    @relation("InvestigationDecisionMaker", fields: [decisionById], references: [id])
+  decisionDate          DateTime?
+  outcome               String?  // Substantiated, Unsubstantiated, Partially Substantiated, Inconclusive
+
+  // Referral (if applicable)
+  referralInstitution    String?
+  referralDate          DateTime?
+  referralReason        String?  @db.Text
+  referralApprovedById  String?  @db.Uuid
+  referralApprovedBy    User?    @relation("InvestigationReferralApprover", fields: [referralApprovedById], references: [id])
+
+  // Closure
+  closureReason         String?  @db.Text
+  followUpActions       String?  @db.Text
+  closedById            String?  @db.Uuid
+  closedBy              User?    @relation("InvestigationCloser", fields: [closedById], references: [id])
+  closedAt              DateTime?
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relationships
+  activities            InvestigationActivity[]
+  evidence              Evidence[]
+  
+  @@index([status])
+  @@index([startDate])
+  @@index([targetCompletionDate])
+}
+
+model InvestigationActivity {
+  id                String   @id @default(cuid())
+  investigationId   String
+  investigation     Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  
+  activityType      String   // Interview, Document Review, Site Visit, Witness Statement, etc.
+  description       String   @db.Text
+  activityDate      DateTime
+  conductedBy       String?  @db.Uuid
+  conductedByUser   User?    @relation("ActivityConductor", fields: [conductedBy], references: [id])
+  
+  outcomes          String?  @db.Text
+  createdAt         DateTime @default(now())
+  
+  @@index([investigationId])
+  @@index([activityDate])
+}
+
+model Evidence {
+  id                String   @id @default(cuid())
+  
+  // Can be attached to Complaint or Investigation
+  complaintId       String?
+  complaint         Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  investigationId   String?
+  investigation     Investigation? @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  
+  // File Information
+  fileName          String
+  fileType          String
+  fileSize          Int
+  filePath          String
+  fileHash          String?
+  
+  // Metadata
+  description       String?
+  uploadedBy        String?  @db.Uuid
+  uploader          User?    @relation("EvidenceUploader", fields: [uploadedBy], references: [id])
+  uploadedAt        DateTime @default(now())
+  
+  // Chain of Custody
+  custodyLog        String?  @db.Text // JSON string tracking custody transfers
+  
+  @@index([complaintId])
+  @@index([investigationId])
+  @@index([uploadedAt])
+}
+
+model Policy {
+  id                String   @id @default(cuid())
+  documentNumber    String   @unique
+  title             String
+  policyType        String   // Code of Ethics, Policy, Directive, Procedure, Guideline
+  version           String
+  owner             String?
+  effectiveDate     DateTime
+  reviewDate        DateTime?
+  
+  // Document
+  filePath          String?
+  fileSize          Int?
+  
+  // Approval
+  approvalAuthority String?
+  approvalDate      DateTime?
+  publicationDate   DateTime?
+  status            String   @default("Draft") // Draft, Submitted for Approval, Approved, Published, Archived
+  
+  // Content
+  description       String?  @db.Text
+  
+  // Versioning
+  previousVersionId String?
+  previousVersion   Policy?  @relation("PolicyVersion", fields: [previousVersionId], references: [id])
+  nextVersions      Policy[] @relation("PolicyVersion")
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relationships
+  acknowledgments   PolicyAcknowledgment[]
+  
+  @@index([status])
+  @@index([policyType])
+  @@index([effectiveDate])
+}
+
+model PolicyAcknowledgment {
+  id          String   @id @default(cuid())
+  policyId    String
+  policy      Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  userId      String   @db.Uuid
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acknowledgedAt DateTime @default(now())
+  
+  @@unique([policyId, userId])
+  @@index([policyId])
+  @@index([userId])
+}
+
+model Declaration {
+  id                String   @id @default(cuid())
+  declarationNumber  String   @unique // e.g., DECL-2026-0001
+  
+  // Declarant
+  declarantId       String   @db.Uuid
+  declarant         User     @relation(fields: [declarantId], references: [id])
+  department        String?
+  
+  // Declaration Type
+  declarationType   String   // Conflict of Interest, Asset Disclosure, Gift, Outside Employment
+  
+  // Conflict of Interest Details
+  relatedOrganization String?
+  relationshipDescription String? @db.Text
+  potentialImpact   String?  @db.Text
+  dateDisclosed     DateTime
+  proposedMitigation String? @db.Text
+  
+  // Gift Details (if applicable)
+  giftDescription   String?
+  offeredBy         String?
+  estimatedValue    Decimal?
+  currency          String?
+  dateOffered       DateTime?
+  officialPurpose   String?
+  acceptanceStatus  String? // Accepted, Refused, Returned
+  
+  // Review
+  reviewerId        String?  @db.Uuid
+  reviewer          User?    @relation("DeclarationReviewer", fields: [reviewerId], references: [id])
+  reviewDate        DateTime?
+  decision          String? // Approved, Rejected, Requires Mitigation
+  reviewComments    String? @db.Text
+  
+  // Mitigation
+  mitigationAction  String? @db.Text
+  mitigationDueDate DateTime?
+  mitigationStatus  String? // Pending, In Progress, Completed
+  
+  // Recusal
+  isRecusal         Boolean  @default(false)
+  recusalReason     String? @db.Text
+  
+  // Status
+  status            String   @default("Draft") // Draft, Submitted, Under Review, Approved, Rejected, Closed
+  
+  // Timestamps
+  submittedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([declarantId])
+  @@index([declarationType])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+model Training {
+  id                String   @id @default(cuid())
+  courseCode        String   @unique
+  title             String
+  description       String?  @db.Text
+  learningObjectives String?  @db.Text
+  
+  // Delivery
+  deliveryMethod    String   // Online, In-Person, Hybrid
+  trainer           String?
+  targetAudience    String?
+  
+  // Schedule
+  startDate         DateTime
+  endDate           DateTime
+  venue             String?
+  onlineLink        String?
+  capacity          Int?
+  
+  // Materials
+  materialsPath     String?
+  
+  // Status
+  status            String   @default("Draft") // Draft, Published, Completed, Cancelled
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relationships
+  registrations     TrainingRegistration[]
+  
+  @@index([status])
+  @@index([startDate])
+}
+
+model TrainingRegistration {
+  id                String   @id @default(cuid())
+  trainingId        String
+  training          Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  userId            String   @db.Uuid
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Attendance
+  registeredAt      DateTime @default(now())
+  attended          Boolean  @default(false)
+  attendanceDate    DateTime?
+  completionStatus  String? // Not Started, In Progress, Completed
+  completionDate    DateTime?
+  evaluationScore   Int?
+  evaluationComments String? @db.Text
+  
+  @@unique([trainingId, userId])
+  @@index([trainingId])
+  @@index([userId])
+}
+
+model RiskAssessment {
+  id                String   @id @default(cuid())
+  riskId            String   @unique // e.g., RISK-2026-0001
+  
+  // Context
+  institution       String
+  department        String
+  process           String
+  riskDescription   String   @db.Text
+  riskCategory      String   // Financial, Operational, Reputational, Legal, etc.
+  causes            String?  @db.Text
+  
+  // Risk Rating
+  likelihood        String   // Very Low, Low, Medium, High, Very High
+  impact            String   // Very Low, Low, Medium, High, Very High
+  inherentRisk      String   // Low, Medium, High, Critical
+  
+  // Controls
+  existingControls  String?  @db.Text
+  mitigationActions String?  @db.Text
+  responsibleOfficer String?
+  dueDate           DateTime?
+  
+  // Residual Risk
+  residualRisk      String? // Low, Medium, High, Critical
+  reviewDate        DateTime?
+  
+  // Status
+  status            String   @default("Draft") // Draft, Submitted, Under Review, Approved, Closed
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relationships
+  mitigationPlans   MitigationPlan[]
+  
+  @@index([institution])
+  @@index([department])
+  @@index([status])
+  @@index([inherentRisk])
+}
+
+model MitigationPlan {
+  id                String   @id @default(cuid())
+  riskAssessmentId String
+  riskAssessment    RiskAssessment @relation(fields: [riskAssessmentId], references: [id], onDelete: Cascade)
+  
+  action            String   @db.Text
+  responsibleOfficer String?
+  dueDate           DateTime
+  status            String   @default("Pending") // Pending, In Progress, Completed, Overdue
+  progress          String?  @db.Text
+  evidence          String?  @db.Text
+  completedAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([riskAssessmentId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+// ====================================================================
+// GENERAL MESSAGING SYSTEM
+// ====================================================================
+
+model Message {
+  id          String   @id @default(cuid())
+  fromId      String   @db.Uuid
+  toId        String   @db.Uuid
+  text        String   @db.Text
+  attachments String[] @default([])
+  readBy      String[] @default([])
+  createdAt   DateTime @default(now())
+
+  // Relations
+  fromUser User @relation("DirectMessageSender", fields: [fromId], references: [id], onDelete: Cascade)
+  toUser   User @relation("DirectMessageReceiver", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([fromId])
+  @@index([toId])
+  @@index([createdAt])
+}
+
+// ====================================================================
+// SECRET CODE SECURITY SYSTEM
+// ====================================================================
+
+model SecretCode {
+  id              String   @id @default(cuid())
+  userId          String   @db.Uuid
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  codeHash        String   // Secure hashed secret code (bcrypt)
+  resetRequired   Boolean  @default(false) // Indicates whether a new code is required
+  failedAttempts  Int      @default(0) // Failed verification counter
+  lockedUntil     DateTime? // Temporary lock expiration
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([userId])
+  @@index([userId])
+}

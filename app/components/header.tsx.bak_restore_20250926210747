@@ -1,0 +1,74 @@
+"use client";
+
+import React from "react";
+import { usePathname, useRouter } from "next/navigation";
+
+export default function Header() {
+  const pathname = usePathname();
+  if (pathname === "/login") return null;
+  return (
+    <header
+      style={{
+        width: "100%",
+        background: "#135a98",
+        color: "#fff",
+        padding: "10px 16px",
+        boxShadow: "none",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        position: "sticky",
+        top: 0,
+        zIndex: 1000,
+        borderBottom: "none",
+        gap: 12,
+      }}
+    >
+      {/* Workspace quick links */}
+      <a
+        href="/about"
+        style={{
+          color: "#fff",
+          background: "transparent",
+          textDecoration: "none",
+          fontWeight: 600,
+          padding: "8px 12px",
+          borderRadius: 6,
+          fontSize: "0.9rem",
+          border: "1px solid rgba(255,255,255,0.4)",
+          transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          (e.target as HTMLElement).style.background = "rgba(255,255,255,0.12)";
+          (e.target as HTMLElement).style.color = "#fff";
+        }}
+        onMouseLeave={(e) => {
+          (e.target as HTMLElement).style.background = "transparent";
+          (e.target as HTMLElement).style.color = "#fff";
+        }}
+      >
+        About us
+      </a>
+      <a
+        href="/messages"
+        style={{
+          color: "#fff",
+          background: "transparent",
+          textDecoration: "none",
+          fontWeight: 600,
+          padding: "8px 12px",
+          borderRadius: 6,
+          fontSize: "0.9rem",
+          border: "1px solid rgba(255,255,255,0.4)",
+          transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
+        }}
+          borderRadius: 6,
+          fontSize: "0.9rem",
+          border: "1px solid rgba(255,255,255,0.4)",
+          transition: "background 0.2s ease, color 0.2s ease, border-color 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          (e.target as HTMLElement).style.background = "rgba(255,255,255,0.12)";
+      </a>
+    </header>
+  );

@@ -1,0 +1,450 @@
+// Ethics & Anti-Corruption Module Prisma Schema
+// This schema defines the database structure for the ethics and anti-corruption management system
+
+model Complaint {
+  id                String   @id @default(cuid())
+  referenceNumber   String   @unique // e.g., FCSC-2026-0001
+  trackingId        String?  @unique // e.g., FCSC-2026-A8K7M2Q9 for external tracking
+  verificationSecret String? // Secret code for external tracking verification
+  reportingChannel  String   // public_portal, employee, telephone, referral
+  isAnonymous       Boolean  @default(false)
+  isInternal        Boolean  @default(false) // true for internal employees, false for external sources
+
+  // Complainant Information (if not anonymous)
+  complainantName   String?
+  complainantEmail  String?
+  complainantPhone  String?
+  complainantDepartment String?
+  complainantPosition String?
+
+  // Complaint Details
+  category          String   // Bribery, Fraud, Favoritism, Abuse of Authority, Conflict of Interest, etc.
+  institution       String?
+  department        String?
+  subject           String?  // Person, office, or organization involved
+  perpetratorPosition String?
+  incidentDate      DateTime?
+  incidentLocation  String?
+  description       String   @db.Text
+  priority          String   @default("Low") // Low, High, Urgent
+
+  // Screening Information (Ethics Officer)
+  screeningNotes    String?  @db.Text
+  isDuplicate       Boolean  @default(false)
+  duplicateReference String?
+  safetyRisk        String?  @default("None") // None, Low, Medium, High, Urgent
+  retaliationRisk   String?  @default("None") // None, Low, Medium, High, Urgent
+  confidentialityLevel String? @default("Standard") // Standard, High, Confidential
+  documentsVerified Boolean  @default(false)
+  documentsRequired String?  @db.Text
+
+  // Workflow Status
+  status            String   @default("Submitted") // Submitted, Registered, Triage, Assigned, Under Assessment, Under Investigation, Closed
+
+  // Consent and Declaration
+  consentDeclaration Boolean  @default(false)
+  consentAccuracy   Boolean  @default(false)
+
+  // Timestamps
+  submittedAt       DateTime?
+  registeredAt      DateTime?
+  screenedAt        DateTime?
+  assignedAt        DateTime?
+  closedAt          DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relationships
+  investigation      Investigation?
+  evidence          Evidence[]
+  assigneeId        String?
+  assignee          User?    @relation("ComplaintAssignee", fields: [assigneeId], references: [id])
+  createdBy         String?
+  creator           User?    @relation("ComplaintCreator", fields: [createdBy], references: [id])
+  screenedById      String?
+  screenedBy        User?    @relation("ComplaintScreener", fields: [screenedById], references: [id])
+  messages          ComplaintMessage[]
+
+  @@index([status])
+  @@index([category])
+  @@index([priority])
+  @@index([createdAt])
+  @@index([screenedById])
+}
+
+model ComplaintMessage {
+  id                String   @id @default(cuid())
+  complaintId       String
+  complaint         Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  senderId          String
+  sender            User?    @relation("MessageSender", fields: [senderId], references: [id])
+  senderRole        String   // Ethics_Officer, Complainant, Investigator, Department_Head
+
+  message           String   @db.Text
+  isSystemMessage   Boolean  @default(false)
+
+  // Timestamps
+  sentAt            DateTime @default(now())
+  readAt            DateTime?
+
+  @@index([complaintId])
+  @@index([senderId])
+}
+
+model Investigation {
+  id                    String   @id @default(cuid())
+  caseNumber            String   @unique // e.g., CASE-2026-0001
+  
+  // Linked Complaint
+  complaintId           String   @unique
+  complaint             Complaint @relation(fields: [complaintId], references: [id])
+  
+  // Assignment
+  assignedInvestigatorId String?
+  assignedInvestigator   User?    @relation("InvestigationAssignee", fields: [assignedInvestigatorId], references: [id])
+  assignedSupervisorId  String?
+  assignedSupervisor    User?    @relation("InvestigationSupervisor", fields: [assignedSupervisorId], references: [id])
+  
+  // Investigation Details
+  status                String   @default("Preliminary Assessment") // Preliminary Assessment, Investigation Plan, Under Investigation, Findings Submitted, Supervisory Review, Decision, Referred, Closed, Suspended
+  scope                 String?  @db.Text
+  objectives            String?  @db.Text
+  applicableLaw         String?  @db.Text
+  
+  // Dates
+  startDate             DateTime
+  targetCompletionDate   DateTime
+  actualCompletionDate   DateTime?
+  
+  // Findings and Recommendations
+  findings              String?  @db.Text
+  recommendation        String?  @db.Text
+  decision              String?  @db.Text
+  decisionAuthority     String?
+  decisionDate          DateTime?
+  outcome               String?  // Substantiated, Unsubstantiated, Partially Substantiated, Inconclusive
+  
+  // Referral (if applicable)
+  referralInstitution    String?
+  referralDate          DateTime?
+  referralReason        String?  @db.Text
+  
+  // Closure
+  closureReason         String?  @db.Text
+  followUpActions       String?  @db.Text
+  
+  // Timestamps
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relationships
+  activities            InvestigationActivity[]
+  evidence              Evidence[]
+  
+  @@index([status])
+  @@index([startDate])
+  @@index([targetCompletionDate])
+}
+
+model InvestigationActivity {
+  id                String   @id @default(cuid())
+  investigationId   String
+  investigation     Investigation @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  
+  activityType      String   // Interview, Document Review, Site Visit, Witness Statement, etc.
+  description       String   @db.Text
+  activityDate      DateTime
+  conductedBy       String?
+  conductedByUser   User?    @relation("ActivityConductor", fields: [conductedBy], references: [id])
+  
+  outcomes          String?  @db.Text
+  createdAt         DateTime @default(now())
+  
+  @@index([investigationId])
+  @@index([activityDate])
+}
+
+model Evidence {
+  id                String   @id @default(cuid())
+  
+  // Can be attached to Complaint or Investigation
+  complaintId       String?
+  complaint         Complaint? @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  investigationId   String?
+  investigation     Investigation? @relation(fields: [investigationId], references: [id], onDelete: Cascade)
+  
+  // File Information
+  fileName          String
+  fileType          String
+  fileSize          Int
+  filePath          String
+  fileHash          String?
+  
+  // Metadata
+  description       String?
+  uploadedBy        String?
+  uploader          User?    @relation("EvidenceUploader", fields: [uploadedBy], references: [id])
+  uploadedAt        DateTime @default(now())
+  
+  // Chain of Custody
+  custodyLog        String?  @db.Text // JSON string tracking custody transfers
+  
+  @@index([complaintId])
+  @@index([investigationId])
+  @@index([uploadedAt])
+}
+
+model Policy {
+  id                String   @id @default(cuid())
+  documentNumber    String   @unique
+  title             String
+  policyType        String   // Code of Ethics, Policy, Directive, Procedure, Guideline
+  version           String
+  owner             String?
+  effectiveDate     DateTime
+  reviewDate        DateTime?
+  
+  // Document
+  filePath          String?
+  fileSize          Int?
+  
+  // Approval
+  approvalAuthority String?
+  approvalDate      DateTime?
+  publicationDate   DateTime?
+  status            String   @default("Draft") // Draft, Submitted for  Approval, Approved, Published, Archived
+  
+  // Content
+  description       String?  @db.Text
+  
+  // Versioning
+  previousVersionId String?
+  previousVersion   Policy?  @relation("PolicyVersion", fields: [previousVersionId], references: [id])
+  nextVersions      Policy[] @relation("PolicyVersion")
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relationships
+  acknowledgments   PolicyAcknowledgment[]
+  
+  @@index([status])
+  @@index([policyType])
+  @@index([effectiveDate])
+}
+
+model PolicyAcknowledgment {
+  id          String   @id @default(cuid())
+  policyId    String
+  policy      Policy   @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acknowledgedAt DateTime @default(now())
+  
+  @@unique([policyId, userId])
+  @@index([policyId])
+  @@index([userId])
+}
+
+model Declaration {
+  id                String   @id @default(cuid())
+  declarationNumber  String   @unique // e.g., DECL-2026-0001
+  
+  // Declarant
+  declarantId       String
+  declarant         User     @relation(fields: [declarantId], references: [id])
+  department        String?
+  
+  // Declaration Type
+  declarationType   String   // Conflict of Interest, Asset Disclosure, Gift, Outside Employment
+  
+  // Conflict of Interest Details
+  relatedOrganization String?
+  relationshipDescription String? @db.Text
+  potentialImpact   String?  @db.Text
+  dateDisclosed     DateTime
+  proposedMitigation String? @db.Text
+  
+  // Gift Details (if applicable)
+  giftDescription   String?
+  offeredBy         String?
+  estimatedValue    Decimal?
+  currency          String?
+  dateOffered       DateTime?
+  officialPurpose   String?
+  acceptanceStatus  String? // Accepted, Refused, Returned
+  
+  // Review
+  reviewerId        String?
+  reviewer          User?    @relation("DeclarationReviewer", fields: [reviewerId], references: [id])
+  reviewDate        DateTime?
+  decision          String? // Approved, Rejected, Requires Mitigation
+  reviewComments    String? @db.Text
+  
+  // Mitigation
+  mitigationAction  String? @db.Text
+  mitigationDueDate DateTime?
+  mitigationStatus  String? // Pending, In Progress, Completed
+  
+  // Recusal
+  isRecusal         Boolean  @default(false)
+  recusalReason     String? @db.Text
+  
+  // Status
+  status            String   @default("Draft") // Draft, Submitted, Under Review, Approved, Rejected, Closed
+  
+  // Timestamps
+  submittedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([declarantId])
+  @@index([declarationType])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+model Training {
+  id                String   @id @default(cuid())
+  courseCode        String   @unique
+  title             String
+  description       String?  @db.Text
+  learningObjectives String?  @db.Text
+  
+  // Delivery
+  deliveryMethod    String   // Online, In-Person, Hybrid
+  trainer           String?
+  targetAudience    String?
+  
+  // Schedule
+  startDate         DateTime
+  endDate           DateTime
+  venue             String?
+  onlineLink        String?
+  capacity          Int?
+  
+  // Materials
+  materialsPath     String?
+  
+  // Status
+  status            String   @default("Draft") // Draft, Published, Completed, Cancelled
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relationships
+  registrations     TrainingRegistration[]
+  
+  @@index([status])
+  @@index([startDate])
+}
+
+model TrainingRegistration {
+  id                String   @id @default(cuid())
+  trainingId        String
+  training          Training @relation(fields: [trainingId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Attendance
+  registeredAt      DateTime @default(now())
+  attended          Boolean  @default(false)
+  attendanceDate    DateTime?
+  completionStatus  String? // Not Started, In Progress, Completed
+  completionDate    DateTime?
+  evaluationScore   Int?
+  evaluationComments String? @db.Text
+  
+  @@unique([trainingId, userId])
+  @@index([trainingId])
+  @@index([userId])
+}
+
+model RiskAssessment {
+  id                String   @id @default(cuid())
+  riskId            String   @unique // e.g., RISK-2026-0001
+  
+  // Context
+  institution       String
+  department        String
+  process           String
+  riskDescription   String   @db.Text
+  riskCategory      String   // Financial, Operational, Reputational, Legal, etc.
+  causes            String?  @db.Text
+  
+  // Risk Rating
+  likelihood        String   // Very Low, Low, Medium, High, Very High
+  impact            String   // Very Low, Low, Medium, High, Very High
+  inherentRisk      String   // Low, Medium, High, Critical
+  
+  // Controls
+  existingControls  String?  @db.Text
+  mitigationActions String?  @db.Text
+  responsibleOfficer String?
+  dueDate           DateTime?
+  
+  // Residual Risk
+  residualRisk      String? // Low, Medium, High, Critical
+  reviewDate        DateTime?
+  
+  // Status
+  status            String   @default("Draft") // Draft, Submitted, Under Review, Approved, Closed
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relationships
+  mitigationPlans   MitigationPlan[]
+  
+  @@index([institution])
+  @@index([department])
+  @@index([status])
+  @@index([inherentRisk])
+}
+
+model MitigationPlan {
+  id                String   @id @default(cuid())
+  riskAssessmentId  String
+  riskAssessment    RiskAssessment @relation(fields: [riskAssessmentId], references: [id], onDelete: Cascade)
+  
+  action            String   @db.Text
+  responsibleOfficer String?
+  dueDate           DateTime
+  status            String   @default("Pending") // Pending, In Progress, Completed, Overdue
+  progress          String?  @db.Text
+  evidence          String?  @db.Text
+  completedAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([riskAssessmentId])
+  @@index([status])
+  @@index([dueDate])
+}
+
+// Extend existing User model with ethics-related relations
+// (This would be merged with the existing User model in schema.prisma)
+/*
+model User {
+  // ... existing fields ...
+
+  // Ethics Relations
+  createdComplaints  Complaint[] @relation("ComplaintCreator")
+  assignedComplaints Complaint[] @relation("ComplaintAssignee")
+  screenedComplaints Complaint[] @relation("ComplaintScreener")
+  assignedInvestigations Investigation[] @relation("InvestigationAssignee")
+  supervisedInvestigations Investigation[] @relation("InvestigationSupervisor")
+  conductedActivities InvestigationActivity[] @relation("ActivityConductor")
+  uploadedEvidence Evidence[] @relation("EvidenceUploader")
+  reviewedDeclarations Declaration[] @relation("DeclarationReviewer")
+  declarations Declaration[]
+  policyAcknowledgments PolicyAcknowledgment[]
+  trainingRegistrations TrainingRegistration[]
+  sentMessages ComplaintMessage[] @relation("MessageSender")
+}
+*/

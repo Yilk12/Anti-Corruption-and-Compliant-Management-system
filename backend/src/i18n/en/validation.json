@@ -1,0 +1,11 @@
+{
+  "REQUIRED": "This field is required.",
+  "IS_EMAIL": "Please enter a valid email address.",
+  "IS_STRING": "This field must be a valid text string.",
+  "IS_BOOLEAN": "This field must be a boolean value.",
+  "MIN_LENGTH": "This field must be at least {length} characters long.",
+  "MAX_LENGTH": "This field must not exceed {length} characters.",
+  "ENUM": "Please select a valid value.",
+  "IS_ARRAY": "This field must be an array.",
+  "IS_DATE": "This field must be a valid ISO date string."
+}

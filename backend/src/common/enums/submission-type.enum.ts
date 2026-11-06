@@ -1,0 +1,5 @@
+export enum SubmissionType {
+  COMPLAINT = 'COMPLAINT',
+  SUGGESTION = 'SUGGESTION',
+  COMPLIMENT = 'COMPLIMENT',
+}

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Combined Amharic Menu Interface</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        /* Ethiopic font recommendation for Amharic characters */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            font-family: 'Noto Sans Ethiopic', sans-serif;
+        }
+
+        .menu-container {
+            width: 100%;
+            max-width: 400px;
+            /* Use min-height: 100vh for a mobile-like full-screen experience */
+            min-height: 100vh; 
+            background: linear-gradient(180deg, #304777 0%, #3a5c96 100%); /* Blue gradient */
+            padding-top: 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        /* --- Main Menu Item Styling --- */
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            color: #FFFFFF;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15); 
+        }
+
+        .menu-item:last-child {
+            /* This targets the final visible item, which may not be the last in the HTML if a sub-menu is active */
+            /* For simplicity, we'll keep the separator on the last non-dropdown item */
+        }
+
+        .menu-item:not(.dropdown-toggle):hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-toggle {
+            cursor: pointer;
+        }
+
+        .item-content {
+            display: flex;
+            align-items: center;
+        }
+
+        .item-icon {
+            font-size: 20px;
+            width: 30px; 
+            text-align: center;
+            margin-right: 15px;
+        }
+
+        .item-label {
+            font-size: 18px;
+            font-weight: 400;
+        }
+
+        .arrow-icon {
+            font-size: 20px;
+            color: #FFFFFF;
+            transition: transform 0.3s ease; /* Smooth transition for rotation */
+        }
+
+        /* Rotate the arrow for the active dropdown */
+        .arrow-icon.rotated {
+            transform: rotate(90deg);
+        }
+
+        /* --- Submenu Styling --- */
+        .submenu-content {
+            /* Start hidden: max-height 0 and hidden overflow */
+            max-height: 0;
+            overflow: hidden;
+            background-color: rgba(0, 0, 0, 0.15); 
+            transition: max-height 0.4s ease-in-out; /* Smooth slide animation */
+        }
+
+        .submenu-content.active {
+            /* A value large enough to contain all sub-items when active */
+            max-height: 500px; 
+        }
+
+        .sub-menu-item {
+            padding: 12px 20px 12px 65px; /* Indent the text (icon width + margin) */
+            color: #FFFFFF;
+            font-size: 16px;
+            opacity: 0.8;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sub-menu-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sub-menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+    </style>
+</head>
+<body>
+
+<div class="menu-container">
+    
+    <div class="menu-item dropdown-toggle" data-target="time-submenu">
+        <div class="item-content">
+            <i class="fas fa-clock item-icon"></i>
+            <span class="item-label">ሰዓት</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon" id="time-arrow"></i>
+    </div>
+    
+    <div class="submenu-content" id="time-submenu">
+        <div class="sub-menu-item">የዕለት ሁኔታ መቆጣጠሪያ</div>
+        <div class="sub-menu-item">መቀበያ ስም መግለጫ</div>
+        <div class="sub-menu-item">ጥያቄ (አስቸኳይ)</div>
+        <div class="sub-menu-item">አሰሪና ሠራተኛ ማኅበር (የዕለት ሥራ ብቻ)</div>
+        <div class="sub-menu-item">ደንብና ሥርዓት</div>
+        <div class="sub-menu-item">አስተዳደር ሥራ አስኪያጅ</div>
+    </div>
+    
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-cog item-icon"></i>
+            <span class="item-label">ቢቢሰክ</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+    </div>
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-calendar-alt item-icon"></i>
+            <span class="item-label">ቀን/ክፍያ</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+    </div>
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-user item-icon"></i>
+            <span class="item-label">መረጃ</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+    </div>
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-calendar-check item-icon"></i>
+            <span class="item-label">የክፍያ መረጃ</span>
+        </div>
+        <i class="fas fa-chevron-down arrow-icon"></i> </div>
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-credit-card item-icon"></i>
+            <span class="item-label">የክፍያ ዘዴ መቀየር</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+    </div>
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-balance-scale item-icon"></i>
+            <span class="item-label">የአገልግሎት ስምምነት</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+    </div>
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-question-circle item-icon"></i>
+            <span class="item-label">ጥያቄ/ምላሽ</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+    </div>
+    <div class="menu-item">
+        <div class="item-content">
+            <i class="fas fa-language item-icon"></i>
+            <span class="item-label">የቋንቋ ምርጫ</span>
+        </div>
+        <i class="fas fa-chevron-right arrow-icon"></i>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.querySelector('.dropdown-toggle');
+        const submenu = document.getElementById(toggle.dataset.target);
+        const arrow = document.getElementById('time-arrow');
+
+        toggle.addEventListener('click', function() {
+            // Toggle the 'active' class on the submenu to show/hide it
+            submenu.classList.toggle('active');
+            
+            // Toggle the 'rotated' class on the arrow icon to animate it
+            arrow.classList.toggle('rotated');
+        });
+    });
+</script>
+
+</body>
+</html>
