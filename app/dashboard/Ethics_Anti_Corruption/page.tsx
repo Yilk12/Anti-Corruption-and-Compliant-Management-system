@@ -218,6 +218,11 @@ export default function EthicsAntiCorruptionDashboardPage() {
           const reportsData = await reportsRes.json();
           const reports = Array.isArray(reportsData) ? reportsData : (reportsData.reports || []);
           
+          // Filter out Closed and Approved status from total reports
+          const activeReports = reports.filter((r: any) => 
+            r.status !== 'Closed' && r.status !== 'Approved'
+          );
+          
           const pending = reports.filter((r: any) => r.status === 'Submitted').length;
           const underInvestigation = reports.filter((r: any) => r.status === 'Under Investigation').length;
           const resolved = reports.filter((r: any) => r.status === 'Resolved').length;
@@ -230,12 +235,33 @@ export default function EthicsAntiCorruptionDashboardPage() {
             return (r.status === 'Submitted' || r.status === 'Under Investigation') && createdAt < sevenDaysAgo;
           }).length;
           
-          setTotalReports(reports.length);
+          setTotalReports(activeReports.length);
           setPendingInvestigations(pending);
           setUnderInvestigation(underInvestigation);
           setResolvedCases(resolved);
           setReceivedInvestigations(underInvestigation); // Use under investigation count for received
           setOverdueCount(overdue);
+        }
+
+        // Fetch investigations for accurate closed cases count
+        const invRes = await fetch(`${API_BASE}/api/ethics/investigations?bypassUserFilter=true`, { headers });
+        if (invRes.ok) {
+          const invData = await invRes.json();
+          const investigations = Array.isArray(invData) ? invData : [];
+          
+          // Count closed cases (Closed, Approved, Under Review)
+          const closedCasesCount = investigations.filter((inv: any) => 
+            ['Closed', 'Approved', 'Under Review'].includes(inv.status)
+          ).length;
+          
+          // Count under investigation
+          const underInvCount = investigations.filter((inv: any) => 
+            inv.status === 'Under Investigation'
+          ).length;
+          
+          // Update counts to match investigations endpoint
+          setResolvedCases(closedCasesCount);
+          setUnderInvestigation(underInvCount);
         }
 
         // Fetch approved complaints count from feedback/complaints
@@ -247,19 +273,8 @@ export default function EthicsAntiCorruptionDashboardPage() {
           closedComplaintsCount = closedComplaints.length;
         }
 
-        // Fetch approved investigations count
-        const invRes = await fetch(`${API_BASE}/api/feedback/investigations`, { headers });
-        let approvedInvestigationsCount = 0;
-        if (invRes.ok) {
-          const invData = await invRes.json();
-          const approvedData = invData.filter((inv: any) => 
-            inv.status === 'Closed' && inv.decision === 'Approved'
-          );
-          approvedInvestigationsCount = approvedData.length;
-        }
-
         // Set total complaints count
-        setComplaintsCount(closedComplaintsCount + approvedInvestigationsCount);
+        setComplaintsCount(closedComplaintsCount);
       } catch {
         setTotalReports(0);
         setPendingInvestigations(0);
@@ -485,8 +500,8 @@ export default function EthicsAntiCorruptionDashboardPage() {
             </h1>
           </div>
 
-          {/* Count Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Count Cards - 2x2 Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <a href="/ethics/complaints" className="group block">
               <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300">
                 <div className="flex items-center justify-between">
@@ -530,41 +545,6 @@ export default function EthicsAntiCorruptionDashboardPage() {
                   </div>
                   <div className="bg-green-100 p-3 rounded-full">
                     <CheckCircle className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-              </div>
-            </a>
-          </div>
-
-          {/* Additional Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="/feedback/complaints/approved" className="group block">
-              <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">ቅሬታዎች</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {loadingCounts ? "..." : complaintsCount}
-                    </p>
-                  </div>
-                  <div className="bg-red-100 p-3 rounded-full">
-                    <Inbox className="h-6 w-6 text-red-600" />
-                  </div>
-                </div>
-              </div>
-            </a>
-
-            <a href="/ethics/reports/received" className="group block">
-              <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer border border-gray-200 hover:border-blue-300">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">የተላኩ ምርመራዎች</p>
-                    <p className="text-3xl font-bold text-gray-900 mt-2">
-                      {loadingCounts ? "..." : receivedInvestigations}
-                    </p>
-                  </div>
-                  <div className="bg-purple-100 p-3 rounded-full">
-                    <ClipboardList className="h-6 w-6 text-purple-600" />
                   </div>
                 </div>
               </div>

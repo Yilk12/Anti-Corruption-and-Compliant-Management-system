@@ -7,7 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Textarea } from "@/app/components/ui/textarea";
 import { Badge } from "@/app/components/ui/badge";
-import { ArrowLeft, Send, User, Calendar, Shield, AlertCircle, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, Send, User, Calendar, Shield, AlertCircle, CheckCircle, Clock, Paperclip, Download } from "lucide-react";
 import { DashboardLayout } from "@/app/components/dashboard-layout";
 import { AuthGuard } from "@/app/components/auth-guard";
 import { useSecretCodeCheck } from "@/app/hooks/use-secret-code-check";
@@ -41,6 +41,13 @@ interface Report {
   department?: string;
   person?: string;
   messages?: Message[];
+  attachments?: Array<{
+    id: string;
+    fileName: string;
+    storageKey: string;
+    fileSize: number;
+    mimeType: string;
+  }>;
   investigation?: {
     id: string;
     caseNumber: string;
@@ -259,6 +266,38 @@ export default function AntiCorruptionReportDetailPage() {
                   <div className="text-sm text-gray-500 mb-1">የጉዳዩ ዝርዝር</div>
                   <div className="bg-gray-50 p-4 rounded-lg">{report.description}</div>
                 </div>
+
+                {report.attachments && report.attachments.length > 0 && (
+                  <div>
+                    <div className="text-sm text-gray-500 mb-1">የተያዙ ፋይሎች</div>
+                    <div className="space-y-2">
+                      {report.attachments.map((attachment) => (
+                        <div
+                          key={attachment.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Paperclip className="h-4 w-4 text-gray-500" />
+                            <div>
+                              <div className="font-medium text-sm">{attachment.fileName}</div>
+                              <div className="text-xs text-gray-500">
+                                {attachment.fileSize ? `${(attachment.fileSize / 1024).toFixed(2)} KB` : ''}
+                              </div>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(`http://localhost:4000/uploads/${attachment.storageKey}`, '_blank')}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

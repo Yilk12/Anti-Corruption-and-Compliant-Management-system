@@ -16,10 +16,33 @@ export class EthicsController {
 
   // Anti-Corruption Report Endpoints
   @Post('reports/public')
+  @UseInterceptors(FilesInterceptor('attachments', 5))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Submit a public anti-corruption report (no authentication required)' })
   @ApiResponse({ status: 201, description: 'Report submitted successfully' })
-  async createPublicReport(@Body() createComplaintDto: CreateComplaintDto) {
-    return this.ethicsService.createComplaint(createComplaintDto, null);
+  async createPublicReport(
+    @Body() body: any,
+    @UploadedFiles() files?: Express.Multer.File[]
+  ) {
+    // Convert FormData body to DTO format
+    const createComplaintDto = {
+      complainantName: body.complainantName || '',
+      complainantEmail: body.complainantEmail || '',
+      complainantPhone: body.complainantPhone || '',
+      category: body.category,
+      subject: body.subject,
+      description: body.description,
+      department: body.department,
+      incidentLocation: body.incidentLocation,
+      incidentDate: body.incidentDate,
+      isAnonymous: body.isAnonymous === 'true' || body.isAnonymous === true,
+      isInternal: body.isInternal === 'false' ? false : (body.isInternal || false),
+      reportingChannel: body.reportingChannel || 'public_portal',
+      priority: body.priority || 'Low',
+      consentDeclaration: body.consentDeclaration === 'true' || body.consentDeclaration === true,
+      consentAccuracy: body.consentAccuracy === 'true' || body.consentAccuracy === true,
+    };
+    return this.ethicsService.createComplaint(createComplaintDto, null, files);
   }
 
   @Post('reports/track')

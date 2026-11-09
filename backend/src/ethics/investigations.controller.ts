@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, Request, UseGuards, Post, UseInterceptors, UploadedFiles, Body } from "@nestjs/common";
+import { Controller, Get, Param, Query, Request, UseGuards, Post, Patch, UseInterceptors, UploadedFiles, Body } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes } from "@nestjs/swagger";
 import { EthicsService } from "./ethics.service";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
@@ -85,5 +85,53 @@ export class InvestigationsController {
   @ApiResponse({ status: 201, description: 'Findings saved successfully' })
   async saveFindings(@Param('id') id: string, @Body() body: { findingsRecords: any[] }) {
     return this.ethicsService.saveFindings(id, body.findingsRecords);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Update investigation' })
+  @ApiResponse({ status: 200, description: 'Investigation updated successfully' })
+  async updateInvestigation(
+    @Param('id') id: string,
+    @Body() body: any,
+    @Request() req
+  ) {
+    const userId = req.user?.id || req.user?.sub;
+    return this.ethicsService.updateInvestigation(id, body, userId);
+  }
+
+  @Post(':id/review')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Review and approve investigation' })
+  @ApiResponse({ status: 200, description: 'Investigation reviewed successfully' })
+  async reviewInvestigation(
+    @Param('id') id: string,
+    @Body() body: {
+      reviewerName: string;
+      findings: string;
+      recommendation: string;
+      decision: string;
+      outcome: string;
+    },
+    @Request() req
+  ) {
+    const userId = req.user?.id || req.user?.sub;
+    return this.ethicsService.reviewInvestigation(id, body, userId);
+  }
+
+  @Post(':id/close')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Close investigation case' })
+  @ApiResponse({ status: 200, description: 'Investigation closed successfully' })
+  async closeInvestigation(
+    @Param('id') id: string,
+    @Body() body: {
+      responseMessage: string;
+      followUpActions: string;
+    },
+    @Request() req
+  ) {
+    const userId = req.user?.id || req.user?.sub;
+    return this.ethicsService.closeCase(id, body, userId);
   }
 }

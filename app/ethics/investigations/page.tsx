@@ -117,6 +117,8 @@ export default function InvestigationsPage() {
           throw new Error('Failed to fetch investigations');
         }
         const data = await response.json();
+        console.log('[Fetched Investigations]', data);
+        console.log('[Investigation Statuses]', data.map((inv: any) => ({ caseNumber: inv.caseNumber, status: inv.status })));
         setInvestigations(data);
       } catch (error) {
         console.error('Error fetching investigations:', error);
@@ -147,14 +149,20 @@ export default function InvestigationsPage() {
       investigation.complaintReference.toLowerCase().includes(searchTerm.toLowerCase()) ||
       investigatorName.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = statusFilter === "all" || investigation.status === statusFilter;
+    // When closed tab is active, allow Closed, Approved, and Under Review statuses
+    const matchesStatus = activeTab === "closed" 
+      ? ["Closed", "Approved", "Under Review"].includes(investigation.status)
+      : (statusFilter === "all" || investigation.status === statusFilter);
+    
     const matchesCategory = categoryFilter === "all" || investigation.category === categoryFilter;
     const matchesPriority = priorityFilter === "all" || investigation.priority === priorityFilter;
 
-    // Exclude Closed and Under Review investigations from the main list
-    // They should only appear if explicitly filtered
-    const excludeStatuses = ["Closed", "Under Review"];
-    const isExcluded = excludeStatuses.includes(investigation.status) && statusFilter === "all";
+    // Exclude Closed, Under Review, and Approved investigations from the main list
+    // They should only appear if explicitly filtered via tab or status filter
+    const excludeStatuses = ["Closed", "Under Review", "Approved"];
+    const isExcluded = excludeStatuses.includes(investigation.status) && 
+                      statusFilter === "all" && 
+                      activeTab !== "closed";
 
     // Tab filtering
     let matchesTab = true;
@@ -164,10 +172,37 @@ export default function InvestigationsPage() {
       const targetDate = new Date(investigation.targetCompletionDate);
       matchesTab = targetDate < new Date() && !investigation.actualCompletionDate;
     } else if (activeTab === "closed") {
-      matchesTab = investigation.status === "Closed";
+      matchesTab = ["Closed", "Approved", "Under Review"].includes(investigation.status);
     }
 
-    return matchesSearch && matchesStatus && matchesCategory && matchesPriority && matchesTab && !isExcluded;
+    const result = matchesSearch && matchesStatus && matchesCategory && matchesPriority && matchesTab && !isExcluded;
+    
+    // Console log for debugging
+    if (activeTab === "closed") {
+      console.log('[Filtered Investigation]', {
+        caseNumber: investigation.caseNumber,
+        status: investigation.status,
+        matchesSearch,
+        matchesStatus,
+        matchesCategory,
+        matchesPriority,
+        matchesTab,
+        isExcluded,
+        result
+      });
+    }
+
+    return result;
+  });
+
+  // Console log for debugging filtered results
+  console.log('[Filter Debug]', {
+    activeTab,
+    statusFilter,
+    totalInvestigations: investigations.length,
+    filteredCount: filteredInvestigations.length,
+    closedCount: investigations.filter((i) => i.status === 'Closed').length,
+    approvedCount: investigations.filter((i) => i.status === 'Approved').length
   });
 
   const handleExport = () => {
@@ -225,7 +260,7 @@ export default function InvestigationsPage() {
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="closed">Closed</TabsTrigger>
+              <TabsTrigger value="closed">የታዩ ጥቆማዎች / Closed</TabsTrigger>
             </TabsList>
           </Tabs>
 

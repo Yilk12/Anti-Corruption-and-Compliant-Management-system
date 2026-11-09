@@ -10,7 +10,7 @@ import { Textarea } from "@/app/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { Checkbox } from "@/app/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
-import { Send, CheckCircle } from "lucide-react";
+import { Send, CheckCircle, Paperclip } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function GuestAntiCorruptionPage() {
@@ -29,6 +29,7 @@ export default function GuestAntiCorruptionPage() {
     incidentLocation: "",
     incidentDate: "",
   });
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [consentDeclaration, setConsentDeclaration] = useState(false);
   const [trackingInfo, setTrackingInfo] = useState({
@@ -66,32 +67,34 @@ export default function GuestAntiCorruptionPage() {
     }
 
     try {
-      const payload = {
-        complainantName: reportData.complainantName || "",
-        complainantEmail: reportData.complainantEmail || "",
-        complainantPhone: reportData.complainantPhone || "",
-        category: reportData.category,
-        subject: reportData.person || reportData.category,
-        description: reportData.description,
-        department: reportData.department,
-        incidentLocation: reportData.incidentLocation,
-        incidentDate: reportData.incidentDate,
-        isAnonymous: !reportData.complainantName && !reportData.complainantEmail && !reportData.complainantPhone,
-        isInternal: false,
-        reportingChannel: 'public_portal',
-        priority: "Low",
-        consentDeclaration: true,
-        consentAccuracy: true,
-      };
+      const formData = new FormData();
+      formData.append('complainantName', reportData.complainantName || "");
+      formData.append('complainantEmail', reportData.complainantEmail || "");
+      formData.append('complainantPhone', reportData.complainantPhone || "");
+      formData.append('category', reportData.category);
+      formData.append('subject', reportData.person || reportData.category);
+      formData.append('description', reportData.description);
+      formData.append('department', reportData.department || "");
+      formData.append('incidentLocation', reportData.incidentLocation || "");
+      formData.append('incidentDate', reportData.incidentDate || "");
+      formData.append('isAnonymous', String(!reportData.complainantName && !reportData.complainantEmail && !reportData.complainantPhone));
+      formData.append('isInternal', "false");
+      formData.append('reportingChannel', 'public_portal');
+      formData.append('priority', "Low");
+      formData.append('consentDeclaration', "true");
+      formData.append('consentAccuracy', "true");
+
+      if (attachment) {
+        formData.append('attachments', attachment);
+      }
+
       console.log('=== Submitting to Backend ===');
       console.log('URL:', "http://localhost:4000/api/ethics/anticorruption/reports/public");
-      console.log('Payload:', JSON.stringify(payload, null, 2));
-      console.log('Payload keys:', Object.keys(payload));
+      console.log('Has attachment:', !!attachment);
 
       const res = await fetch("http://localhost:4000/api/ethics/anticorruption/reports/public", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: formData,
       });
 
       console.log('Response status:', res.status);
@@ -186,8 +189,8 @@ export default function GuestAntiCorruptionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-red-50 to-orange-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-7xl">
+    <div className="min-h-screen bg-linear-to-br from-blue-50 to-white flex items-center justify-center p-4">
+      <Card className="w-full max-w-3xl">
         <CardHeader className="text-center">
           <Button
             type="button"
@@ -208,7 +211,7 @@ export default function GuestAntiCorruptionPage() {
                   onValueChange={(value) => setReportData({ ...reportData, category: value })}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Bribery">Bribery</SelectItem>
@@ -229,11 +232,38 @@ export default function GuestAntiCorruptionPage() {
                   id="description"
                   value={reportData.description}
                   onChange={(e) => setReportData({ ...reportData, description: e.target.value })}
-                  placeholder="Provide detailed description of the ethics violation or corruption (minimum 50 characters)"
                   rows={6}
                   required
                   minLength={50}
                 />
+              </div>
+
+              <div>
+                <input
+                  type="file"
+                  id="attachment"
+                  className="hidden"
+                  onChange={(e) => setAttachment(e.target.files?.[0] || null)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => document.getElementById('attachment')?.click()}
+                  className="w-fit"
+                >
+                  <Paperclip className="h-4 w-4 mr-2" />
+                  {attachment ? attachment.name : "Attach File"}
+                </Button>
+                {attachment && (
+                  <button
+                    type="button"
+                    onClick={() => setAttachment(null)}
+                    className="ml-2 text-sm text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
 
               <div className="border-t pt-6 mt-6">
@@ -283,7 +313,6 @@ export default function GuestAntiCorruptionPage() {
                           type="email"
                           value={reportData.complainantEmail}
                           onChange={(e) => setReportData({ ...reportData, complainantEmail: e.target.value })}
-                          placeholder="Enter your email"
                         />
                       </div>
                       <div>
@@ -330,7 +359,6 @@ export default function GuestAntiCorruptionPage() {
                       id="incidentLocation"
                       value={reportData.incidentLocation}
                       onChange={(e) => setReportData({ ...reportData, incidentLocation: e.target.value })}
-                      placeholder="Enter location where incident occurred"
                     />
                   </div>
 

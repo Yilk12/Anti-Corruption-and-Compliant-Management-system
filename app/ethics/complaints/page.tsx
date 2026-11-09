@@ -242,6 +242,16 @@ export default function ComplaintsPage() {
       return false;
     }
     
+    // Exclude closed complaints (they should appear on investigations page under closed tab)
+    if (complaint.status === "Closed") {
+      return false;
+    }
+    
+    // Exclude approved complaints (they should appear on investigations page under closed tab)
+    if (complaint.status === "Approved") {
+      return false;
+    }
+    
     // Filter by complaint type (internal vs external)
     if (complaintTypeFilter !== "all") {
       if (complaintTypeFilter === "internal" && !complaint.isInternal) {

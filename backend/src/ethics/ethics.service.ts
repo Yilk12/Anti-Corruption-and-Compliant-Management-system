@@ -13,7 +13,7 @@ export class EthicsService {
   ) {}
 
   // Complaint Management
-  async createComplaint(createComplaintDto: CreateComplaintDto, userId: string) {
+  async createComplaint(createComplaintDto: CreateComplaintDto, userId: string, files?: Express.Multer.File[]) {
     // Generate reference number
     const year = new Date().getFullYear();
     const count = await this.prisma.complaint.count({
@@ -77,6 +77,32 @@ export class EthicsService {
         createdBy: userId,
       },
     });
+
+    // Save attachments if provided
+    if (files && files.length > 0) {
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+      }
+
+      for (const file of files) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = `${uniqueSuffix}-${file.originalname}`;
+        const filepath = path.join(uploadsDir, filename);
+
+        fs.writeFileSync(filepath, file.buffer);
+
+        await this.prisma.complaintAttachment.create({
+          data: {
+            complaintId: complaint.id,
+            fileName: file.originalname,
+            storageKey: filename,
+            fileSize: file.size,
+            mimeType: file.mimetype,
+          },
+        });
+      }
+    }
 
     // Create notification for ethics officers when a complaint is created
     try {
@@ -627,7 +653,7 @@ export class EthicsService {
     const updatedInvestigation = await this.prisma.investigation.update({
       where: { id: investigationId },
       data: {
-        closureReason: closureData.closureReason,
+        closureReason: closureData.closureReason || 'Case closed by department',
         followUpActions: closureData.followUpActions,
         closedById: closerId,
         closedAt: new Date(),
@@ -997,6 +1023,11 @@ export class EthicsService {
         },
         investigation: true,
         evidence: true,
+        attachments: {
+          where: {
+            isDeleted: false,
+          },
+        },
       },
     });
 
@@ -1244,6 +1275,51 @@ export class EthicsService {
           reportSubmittedAt: new Date(),
           reportSubmittedById: userId,
         }),
+      },
+    });
+
+    return updatedInvestigation;
+  }
+
+  async reviewInvestigation(id: string, reviewData: {
+    reviewerName: string;
+    findings: string;
+    recommendation: string;
+    decision: string;
+    outcome: string;
+  }, userId: string) {
+    const investigation = await this.prisma.investigation.findUnique({
+      where: { id },
+      include: {
+        complaint: true,
+      },
+    });
+
+    if (!investigation) {
+      throw new NotFoundException('Investigation not found');
+    }
+
+    // Update investigation with review data
+    const updatedInvestigation = await this.prisma.investigation.update({
+      where: { id },
+      data: {
+        findings: reviewData.findings,
+        recommendation: reviewData.recommendation,
+        decision: reviewData.decision,
+        outcome: reviewData.outcome,
+        status: 'Under Review',
+        actualCompletionDate: new Date(),
+        decisionAuthority: reviewData.reviewerName,
+        decisionDate: new Date(),
+        decisionById: userId,
+      },
+    });
+
+    // Update complaint status
+    await this.prisma.complaint.update({
+      where: { id: investigation.complaintId },
+      data: {
+        status: 'Under Review',
       },
     });
 
