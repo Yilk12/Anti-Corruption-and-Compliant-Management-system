@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Backend API for Ethiopian Civil Service Commission Helpdesk and Knowledge Base",
   "main": "dist/main.js",
-  "packageManager": "pnpm@10.17.0",
   "scripts": {
     "build": "npx nest build && node scripts/copy-i18n.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
