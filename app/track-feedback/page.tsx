@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
@@ -74,7 +74,7 @@ interface Feedback {
   }>;
 }
 
-export default function TrackFeedbackPage() {
+function TrackFeedbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTrackingId = searchParams.get("trackingId") || "";
@@ -1362,5 +1362,13 @@ export default function TrackFeedbackPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TrackFeedbackPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TrackFeedbackContent />
+    </Suspense>
   );
 }

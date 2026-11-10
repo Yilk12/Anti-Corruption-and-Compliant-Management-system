@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense } from "react";
 import { DashboardLayout } from "@/app/components/dashboard-layout";
 import { AuthGuard } from "@/app/components/auth-guard";
 import { MessageSquare, Bell } from "lucide-react";
@@ -11,7 +11,7 @@ import { apiGet } from "@/app/lib/api";
 
 export const dynamic = 'force-dynamic';
 
-export default function DepartmentHeadDashboardPage() {
+function DepartmentHeadDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedDepartmentId = searchParams.get('departmentId');
@@ -259,6 +259,14 @@ export default function DepartmentHeadDashboardPage() {
         </div>
       </DashboardLayout>
     </AuthGuard>
+  );
+}
+
+export default function DepartmentHeadDashboardPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DepartmentHeadDashboardContent />
+    </Suspense>
   );
 }
 

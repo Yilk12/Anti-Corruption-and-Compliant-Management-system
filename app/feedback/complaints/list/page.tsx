@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/app/components/dashboard-layout";
 import { AuthGuard } from "@/app/components/auth-guard";
 import { useSecretCodeCheck } from "@/app/hooks/use-secret-code-check";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Search, Filter, Eye, ArrowLeft, FileText, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
@@ -37,7 +37,7 @@ interface Complaint {
   departmentalResponse?: any;
 }
 
-export default function FeedbackComplaintsListPage() {
+function FeedbackComplaintsListContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedDepartmentId = searchParams.get('departmentId');
@@ -288,5 +288,13 @@ export default function FeedbackComplaintsListPage() {
         </div>
       </DashboardLayout>
     </AuthGuard>
+  );
+}
+
+export default function FeedbackComplaintsListPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FeedbackComplaintsListContent />
+    </Suspense>
   );
 }

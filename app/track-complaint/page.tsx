@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
 export const dynamic = 'force-dynamic';
 
-export default function TrackComplaintPage() {
+function TrackComplaintContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [trackingId, setTrackingId] = useState("");
@@ -789,6 +789,14 @@ export default function TrackComplaintPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function TrackComplaintPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TrackComplaintContent />
+    </Suspense>
   );
 }
 
