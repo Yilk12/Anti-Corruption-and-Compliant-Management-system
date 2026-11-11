@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common"
 import { ConfigService } from "@nestjs/config"
-import  nodemailer from "nodemailer"
+import * as nodemailer from "nodemailer"
 import { LocalizationService } from "./localization.service"
 import { Language } from "../common/enums/language.enum"
 @Injectable()
